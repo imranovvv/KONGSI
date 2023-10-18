@@ -95,8 +95,20 @@ class _HomeState extends State<Home> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           tileColor: tileColor,
-                          trailing: const Icon(CupertinoIcons.forward),
                           title: Text(filteredGroupNames[index]),
+                          trailing: const Wrap(
+                            spacing: 12,
+                            children: [
+                              Text(
+                                'RM150',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              Icon(CupertinoIcons.forward),
+                            ],
+                          ),
                         ),
                       );
                     },
