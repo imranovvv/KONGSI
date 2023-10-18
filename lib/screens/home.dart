@@ -1,23 +1,35 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class Home extends StatelessWidget {
+class Home extends StatefulWidget {
   const Home({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    List<String> groupNames = [
-      "Family 👪",
-      "Housemates",
-      "Travel",
-      "Housemates",
-      "Travel",
-      "Housemates",
-      "Travel",
-      "Housemates",
-      "Travel"
-    ];
+  State<Home> createState() => _HomeState();
+}
 
+class _HomeState extends State<Home> {
+  TextEditingController searchController = TextEditingController();
+  List<String> groupNames = ["Family 👪", "Housemates", "Travel"];
+  List<String> filteredGroupNames = [];
+
+  @override
+  void initState() {
+    super.initState();
+    filteredGroupNames.addAll(groupNames);
+  }
+
+  void filterGroups(String query) {
+    setState(() {
+      filteredGroupNames = groupNames
+          .where((groupName) =>
+              groupName.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Align(
         child: Column(
@@ -28,7 +40,7 @@ class Home extends StatelessWidget {
               child: Text(
                 'My Groups',
                 style: TextStyle(
-                  fontSize: 24, // Adjust the font size as needed
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -39,14 +51,14 @@ class Home extends StatelessWidget {
                 Text(
                   'Balance: ',
                   style: TextStyle(
-                    fontSize: 16, // Adjust the font size as needed
+                    fontSize: 16,
                   ),
                 ),
                 Text(
                   'RM150',
                   style: TextStyle(
-                    fontSize: 16, // Adjust the font size as needed
-                    color: Colors.green, // Set the text color to green
+                    fontSize: 16,
+                    color: Colors.green,
                   ),
                 ),
               ],
@@ -57,19 +69,22 @@ class Home extends StatelessWidget {
               child: Center(
                 child: CupertinoSearchTextField(
                   decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30.0),
-                      color: Colors.white),
+                    borderRadius: BorderRadius.circular(30.0),
+                    color: Colors.white,
+                  ),
+                  controller: searchController,
+                  onChanged: filterGroups,
                 ),
               ),
             ),
             Expanded(
               child: Padding(
-                padding: EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 child: CupertinoScrollbar(
                   child: ListView.builder(
                     scrollDirection: Axis.vertical,
                     shrinkWrap: true,
-                    itemCount: groupNames.length,
+                    itemCount: filteredGroupNames.length,
                     itemBuilder: (context, index) {
                       Color tileColor =
                           index.isOdd ? const Color(0xffECECEC) : Colors.white;
@@ -81,7 +96,7 @@ class Home extends StatelessWidget {
                           ),
                           tileColor: tileColor,
                           trailing: const Icon(CupertinoIcons.forward),
-                          title: Text(groupNames[index]),
+                          title: Text(filteredGroupNames[index]),
                         ),
                       );
                     },
