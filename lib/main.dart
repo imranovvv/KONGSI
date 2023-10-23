@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:kongsi/screens/home.dart';
+import 'package:kongsi/screens/login.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kongsi/screens/register.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,6 +15,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      routes: {
+        '/login': (context) => const Login(),
+        '/home': (context) => const Home(),
+        '/register': (context) => const Register(),
+      },
       theme: ThemeData(
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: const Color(0xFFE8EEF3),
@@ -23,43 +30,60 @@ class MyApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFFE8EEF3),
         textTheme: GoogleFonts.poppinsTextTheme(),
+        // cupertinoOverrideTheme:
+        //     CupertinoThemeData(brightness: Brightness.light),
       ),
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Kongsi'),
-        ),
-        body: const Home(),
-        bottomNavigationBar: BottomAppBar(
-          color: const Color(0xFFFBFBFB),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              IconButton(
-                icon: const Icon(CupertinoIcons.house_fill),
-                onPressed: () {},
+            titleSpacing: 10,
+            centerTitle: false,
+            title: const Text(
+              'Kongsi',
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
               ),
-              IconButton(
-                icon: const Icon(CupertinoIcons.settings),
-                onPressed: () {},
+            ),
+            leading: Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+              ), // Adjust the padding as needed
+              child: Image.asset(
+                'images/LogoKongsi.png',
+                height: 40, // You can adjust the height as needed
               ),
-            ],
-          ),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: ClipPath(
-          clipper: DiamondClipper(),
-          child: FloatingActionButton(
-            backgroundColor: const Color(0xff10416d),
-            elevation: 0,
-            onPressed: () {
-              // ignore: avoid_print
-              print("Button is pressed.");
-            },
-            child: const Icon(Icons.add),
-          ),
-        ),
+            )),
+        body: const Register(),
+        // bottomNavigationBar: BottomAppBar(
+        //   color: const Color(0xFFFBFBFB),
+        //   child: Row(
+        //     mainAxisSize: MainAxisSize.max,
+        //     mainAxisAlignment: MainAxisAlignment.spaceAround,
+        //     children: [
+        //       IconButton(
+        //         icon: const Icon(CupertinoIcons.house_fill),
+        //         onPressed: () {},
+        //       ),
+        //       IconButton(
+        //         icon: const Icon(CupertinoIcons.gear_alt_fill),
+        //         onPressed: () {},
+        //       ),
+        //     ],
+        //   ),
+        // ),
+        // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        // floatingActionButton: ClipPath(
+        //   clipper: DiamondClipper(),
+        //   child: FloatingActionButton(
+        //     backgroundColor: const Color(0xff10416d),
+        //     elevation: 0,
+        //     onPressed: () {
+        //       // ignore: avoid_print
+        //       print("Button is pressed.");
+        //     },
+        //     child: const Icon(Icons.add),
+        //   ),
+        // ),
       ),
     );
   }
