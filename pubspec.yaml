@@ -37,6 +37,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   google_fonts: ^6.1.0
   flutter_native_splash: ^2.3.4
+  flutter_speed_dial: ^7.0.0
+  firebase_core: ^2.20.0
+  firebase_auth: ^4.12.0
 
 flutter_native_splash:
   color: "#E8EEF3"

@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -29,9 +31,50 @@ class _HomeState extends State<Home> {
     });
   }
 
+  void signOut() async {
+    Navigator.of(context).pop();
+
+    FirebaseAuth.instance.signOut();
+  }
+
+  bool isSelected = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: SpeedDial(
+        backgroundColor: const Color(0xff10416d),
+        children: [
+          SpeedDialChild(
+              child: const Icon(CupertinoIcons.person_add_solid),
+              label: 'New Group'),
+          SpeedDialChild(
+              child: const Icon(CupertinoIcons.person_2_fill),
+              label: 'Join Group'),
+        ],
+        onOpen: () {
+          setState(() {
+            isSelected = !isSelected;
+          });
+        },
+        onClose: () {
+          setState(() {
+            isSelected = !isSelected;
+          });
+        },
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+          child: isSelected
+              ? const Icon(Icons.add, key: Key('addIcon'))
+              : const Icon(Icons.clear, key: Key('clearIcon')),
+        ),
+      ),
+
       body: Align(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,

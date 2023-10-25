@@ -1,16 +1,27 @@
-import 'package:flutter/cupertino.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:kongsi/auth/auth.dart';
 import 'package:kongsi/screens/home.dart';
 import 'package:kongsi/screens/login.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kongsi/screens/register.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  void signOut() async {
+    FirebaseAuth.instance.signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,73 +47,52 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-            titleSpacing: 10,
-            centerTitle: false,
-            title: const Text(
-              'Kongsi',
-              style: TextStyle(
-                fontStyle: FontStyle.italic,
-              ),
+          titleSpacing: 10,
+          centerTitle: false,
+          title: const Text(
+            'Kongsi',
+            style: TextStyle(
+              fontStyle: FontStyle.italic,
             ),
-            leading: Padding(
-              padding: const EdgeInsets.only(
-                left: 16,
-              ), // Adjust the padding as needed
-              child: Image.asset(
-                'images/LogoKongsi.png',
-                height: 40, // You can adjust the height as needed
-              ),
-            )),
-        body: const Register(),
-        // bottomNavigationBar: BottomAppBar(
-        //   color: const Color(0xFFFBFBFB),
-        //   child: Row(
-        //     mainAxisSize: MainAxisSize.max,
-        //     mainAxisAlignment: MainAxisAlignment.spaceAround,
-        //     children: [
-        //       IconButton(
-        //         icon: const Icon(CupertinoIcons.house_fill),
-        //         onPressed: () {},
-        //       ),
-        //       IconButton(
-        //         icon: const Icon(CupertinoIcons.gear_alt_fill),
-        //         onPressed: () {},
-        //       ),
-        //     ],
-        //   ),
-        // ),
-        // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        // floatingActionButton: ClipPath(
-        //   clipper: DiamondClipper(),
-        //   child: FloatingActionButton(
-        //     backgroundColor: const Color(0xff10416d),
-        //     elevation: 0,
-        //     onPressed: () {
-        //       // ignore: avoid_print
-        //       print("Button is pressed.");
-        //     },
-        //     child: const Icon(Icons.add),
-        //   ),
-        // ),
+          ),
+          leading: Padding(
+            padding: const EdgeInsets.only(
+              left: 16,
+            ),
+            child: Image.asset(
+              'images/LogoKongsi.png',
+              height: 40,
+            ),
+          ),
+          actions: [
+            PopupMenuButton(
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem(
+                    value: 0,
+                    child: Text(
+                        'Logout'), // Add a value to identify the Logout menu item.
+                  ),
+                  const PopupMenuItem(
+                    value: 1,
+                    child: Text('Item 2'),
+                  ),
+                  const PopupMenuItem(
+                    value: 2,
+                    child: Text('Item 3'),
+                  ),
+                ];
+              },
+              onSelected: (value) {
+                if (value == 0) {
+                  signOut();
+                }
+              },
+            ),
+          ],
+        ),
+        body: const Auth(),
       ),
     );
-  }
-}
-
-class DiamondClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.moveTo(size.width / 2, 0);
-    path.lineTo(size.width, size.height / 2);
-    path.lineTo(size.width / 2, size.height);
-    path.lineTo(0, size.height / 2);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return true;
   }
 }
