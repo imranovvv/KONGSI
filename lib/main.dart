@@ -27,9 +27,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       routes: {
-        '/login': (context) => const Login(),
         '/home': (context) => const Home(),
-        '/register': (context) => const Register(),
       },
       theme: ThemeData(
         colorScheme: ColorScheme.fromSwatch().copyWith(

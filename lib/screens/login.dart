@@ -4,7 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class Login extends StatefulWidget {
-  const Login({Key? key}) : super(key: key);
+  final Function() onTap;
+  const Login({super.key, required this.onTap});
 
   @override
   State<Login> createState() => _LoginState();
@@ -14,7 +15,7 @@ class _LoginState extends State<Login> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   bool isPasswordVisible = false;
-
+  bool isInvalidEmail = false;
   void signIn() async {
     showDialog(
       context: context,
@@ -29,16 +30,33 @@ class _LoginState extends State<Login> {
         email: emailController.text,
         password: passwordController.text,
       );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        print("no username found");
-      } else if (e.code == 'wrong-password') {
-        print("wrong pass");
+      if (context.mounted) {
+        Navigator.of(context).pop();
       }
+    } on FirebaseAuthException catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+      if (e.code == 'invalid-email') {}
+      isInvalidEmail = true;
     }
-    if (context.mounted) {
-      Navigator.of(context).pop();
-    }
+  }
+
+  void showErrorMessage(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.amber,
+          title: Center(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -68,6 +86,18 @@ class _LoginState extends State<Login> {
                         clearButtonMode: OverlayVisibilityMode.editing,
                         style: GoogleFonts.poppins(),
                       ),
+                      // if (!isInvalidEmail)
+                      //   Align(
+                      //     alignment: Alignment.centerLeft,
+                      //     child: Padding(
+                      //       padding: EdgeInsets.only(left: 10.0),
+                      //       child: Text(
+                      //         'Invalid email address',
+                      //         style: TextStyle(color: Colors.red),
+                      //         textAlign: TextAlign.left,
+                      //       ),
+                      //     ),
+                      //   ),
                       const SizedBox(height: 16.0),
                       CupertinoTextField(
                         placeholder: 'Password',
@@ -124,10 +154,7 @@ class _LoginState extends State<Login> {
                               style: TextStyle(fontSize: 14),
                             ),
                             GestureDetector(
-                              onTap: () {
-                                // Navigate to the registration screen when the text is tapped.
-                                // Navigator.pushNamed(context, '/registration');
-                              },
+                              onTap: widget.onTap,
                               child: const Text(
                                 "Register",
                                 style: TextStyle(

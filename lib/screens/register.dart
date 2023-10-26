@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class Register extends StatefulWidget {
-  const Register({Key? key}) : super(key: key);
+  final Function()? onTap;
+  const Register({super.key, required this.onTap});
 
   @override
   State<Register> createState() => _RegisterState();
@@ -16,6 +18,35 @@ class _RegisterState extends State<Register> {
   TextEditingController confirmPasswordController = TextEditingController();
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
+
+  void signUp() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return const Center(
+          child: CupertinoActivityIndicator(),
+        );
+      },
+    );
+    try {
+      if (passwordController.text == confirmPasswordController.text) {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: emailController.text,
+          password: passwordController.text,
+        );
+      } else {
+        //show error
+      }
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+    } on FirebaseAuthException catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+      if (e.code == 'invalid-email') {}
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,8 +148,7 @@ class _RegisterState extends State<Register> {
                           elevation: 0,
                         ),
                         onPressed: () {
-                          // Handle Register logic here
-                          // Navigator.pushNamed(context, '/home');
+                          signUp();
                         },
                         child: const Text(
                           "Register",
@@ -137,10 +167,7 @@ class _RegisterState extends State<Register> {
                             style: TextStyle(fontSize: 14),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              // Navigate to the Register screen when the text is tapped.
-                              // Navigator.pushNamed(context, '/Register');
-                            },
+                            onTap: widget.onTap,
                             child: const Text(
                               "Login",
                               style: TextStyle(
