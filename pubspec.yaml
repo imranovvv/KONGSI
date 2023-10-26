@@ -40,6 +40,7 @@ dependencies:
   flutter_speed_dial: ^7.0.0
   firebase_core: ^2.20.0
   firebase_auth: ^4.12.0
+  cloud_firestore: ^4.12.0
 
 flutter_native_splash:
   color: "#E8EEF3"

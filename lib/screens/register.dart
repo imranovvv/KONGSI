@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -34,6 +35,7 @@ class _RegisterState extends State<Register> {
           email: emailController.text,
           password: passwordController.text,
         );
+        addUser(nameController.text, emailController.text);
       } else {
         //show error
       }
@@ -46,6 +48,14 @@ class _RegisterState extends State<Register> {
       }
       if (e.code == 'invalid-email') {}
     }
+  }
+
+  Future addUser(String name, String email) async {
+    var uid = FirebaseAuth.instance.currentUser?.uid;
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'name': name,
+      'email': email,
+    });
   }
 
   @override
@@ -98,8 +108,7 @@ class _RegisterState extends State<Register> {
                           });
                         },
                         child: Padding(
-                          padding: const EdgeInsets.only(
-                              right: 8.0), // Add right padding here
+                          padding: const EdgeInsets.only(right: 8.0),
                           child: Icon(
                             isPasswordVisible
                                 ? CupertinoIcons.eye_slash_fill
@@ -126,8 +135,7 @@ class _RegisterState extends State<Register> {
                           });
                         },
                         child: Padding(
-                          padding: const EdgeInsets.only(
-                              right: 8.0), // Add right padding here
+                          padding: const EdgeInsets.only(right: 8.0),
                           child: Icon(
                             isConfirmPasswordVisible
                                 ? CupertinoIcons.eye_slash_fill
@@ -172,8 +180,7 @@ class _RegisterState extends State<Register> {
                               "Login",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Color(
-                                    0xff10416d), // You can set the color you desire
+                                color: Color(0xff10416d),
                               ),
                             ),
                           ),

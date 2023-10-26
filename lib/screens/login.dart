@@ -113,8 +113,7 @@ class _LoginState extends State<Login> {
                             });
                           },
                           child: Padding(
-                            padding: const EdgeInsets.only(
-                                right: 8.0), // Add right padding here
+                            padding: const EdgeInsets.only(right: 8.0),
                             child: Icon(
                               isPasswordVisible
                                   ? CupertinoIcons.eye_slash_fill
@@ -159,8 +158,7 @@ class _LoginState extends State<Login> {
                                 "Register",
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Color(
-                                      0xff10416d), // You can set the color you desire
+                                  color: Color(0xff10416d),
                                 ),
                               ),
                             ),

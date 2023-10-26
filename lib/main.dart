@@ -2,9 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:kongsi/auth/auth.dart';
 import 'package:kongsi/screens/home.dart';
-import 'package:kongsi/screens/login.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kongsi/screens/register.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -68,8 +66,7 @@ class MyApp extends StatelessWidget {
                 return [
                   const PopupMenuItem(
                     value: 0,
-                    child: Text(
-                        'Logout'), // Add a value to identify the Logout menu item.
+                    child: Text('Logout'),
                   ),
                   const PopupMenuItem(
                     value: 1,
