@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:kongsi/auth/auth.dart';
 import 'package:kongsi/screens/home.dart';
@@ -16,10 +15,6 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  void signOut() async {
-    FirebaseAuth.instance.signOut();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,52 +36,8 @@ class MyApp extends StatelessWidget {
         //     CupertinoThemeData(brightness: Brightness.light),
       ),
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          titleSpacing: 10,
-          centerTitle: false,
-          title: const Text(
-            'Kongsi',
-            style: TextStyle(
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          leading: Padding(
-            padding: const EdgeInsets.only(
-              left: 16,
-            ),
-            child: Image.asset(
-              'images/LogoKongsi.png',
-              height: 40,
-            ),
-          ),
-          actions: [
-            PopupMenuButton(
-              itemBuilder: (BuildContext context) {
-                return [
-                  const PopupMenuItem(
-                    value: 0,
-                    child: Text('Logout'),
-                  ),
-                  const PopupMenuItem(
-                    value: 1,
-                    child: Text('Item 2'),
-                  ),
-                  const PopupMenuItem(
-                    value: 2,
-                    child: Text('Item 3'),
-                  ),
-                ];
-              },
-              onSelected: (value) {
-                if (value == 0) {
-                  signOut();
-                }
-              },
-            ),
-          ],
-        ),
-        body: const Auth(),
+      home: const Scaffold(
+        body: Auth(),
       ),
     );
   }

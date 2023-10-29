@@ -41,6 +41,7 @@ dependencies:
   firebase_core: ^2.20.0
   firebase_auth: ^4.12.0
   cloud_firestore: ^4.12.0
+  dropdown_search: ^5.0.6
 
 flutter_native_splash:
   color: "#E8EEF3"
