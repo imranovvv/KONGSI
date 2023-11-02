@@ -71,13 +71,10 @@ class _JoinGroupState extends State<JoinGroup> {
               },
             ),
             Padding(
-              padding:
-                  const EdgeInsets.all(16.0), // Adjust the padding as needed
+              padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
-                onPressed: () {
-                  // Add your save action here
-                },
-                child: Text('Save'),
+                onPressed: () {},
+                child: const Text('Save'),
               ),
             ),
           ],

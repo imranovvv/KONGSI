@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kongsi/components/appbar.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NewGroup extends StatefulWidget {
   const NewGroup({super.key});
@@ -12,10 +14,18 @@ class NewGroup extends StatefulWidget {
 }
 
 class _NewGroupState extends State<NewGroup> {
-  TextEditingController nameController = TextEditingController();
-  TextEditingController emailController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  TextEditingController groupNameController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
+  TextEditingController textController = TextEditingController();
+  TextEditingController selectedValueController = TextEditingController();
+
   final List<String> items = [];
-  final TextEditingController textController = TextEditingController();
 
   void addMember(String name) {
     setState(() {
@@ -30,32 +40,77 @@ class _NewGroupState extends State<NewGroup> {
     });
   }
 
+  Future fetchUserData() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists) {
+          String currentUserDisplayName = userDoc.get('name');
+
+          setState(() {
+            items.insert(0, currentUserDisplayName);
+          });
+        }
+      } else {
+        String currentUserDisplayName = 'Guest';
+        setState(() {
+          items.insert(0, currentUserDisplayName);
+        });
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+    }
+  }
+
+  void addGroup() async {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      await firestore.collection('groups').add({
+        'groupname': groupNameController.text,
+        'description': descriptionController.text,
+        'currency': selectedValueController.text,
+        'members': items,
+      });
+      print('Group added to Firestore successfully!');
+    } catch (e) {
+      print('Error adding group to Firestore: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(showLogoutButton: false),
-      bottomNavigationBar: BottomAppBar(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 1,
-              height: MediaQuery.of(context).size.width * 0.1,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff10416d),
-                  elevation: 0,
-                ),
-                onPressed: () {},
-                child: const Text(
-                  "Save",
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      // bottomNavigationBar: BottomAppBar(
+      //   child: Row(
+      //     mainAxisAlignment: MainAxisAlignment.center,
+      //     children: [
+      //       SizedBox(
+      //         width: MediaQuery.of(context).size.width * 1,
+      //         height: MediaQuery.of(context).size.width * 0.1,
+      //         child: ElevatedButton(
+      //           style: ElevatedButton.styleFrom(
+      //             backgroundColor: const Color(0xff10416d),
+      //             elevation: 0,
+      //           ),
+      //           onPressed: () {
+      //             addGroup();
+      //           },
+      //           child: const Text(
+      //             "Save",
+      //             style: TextStyle(fontSize: 16),
+      //           ),
+      //         ),
+      //       ),
+      //     ],
+      //   ),
+      // ),
       body: Column(
         children: [
           AppBar(
@@ -87,7 +142,7 @@ class _NewGroupState extends State<NewGroup> {
                       ],
                     ),
                     placeholder: 'Title',
-                    controller: nameController,
+                    controller: groupNameController,
                     keyboardType: TextInputType.text,
                     style: GoogleFonts.poppins(),
                     padding:
@@ -108,7 +163,7 @@ class _NewGroupState extends State<NewGroup> {
                       ],
                     ),
                     placeholder: 'Description',
-                    controller: emailController,
+                    controller: descriptionController,
                     keyboardType: TextInputType.text,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -162,7 +217,11 @@ class _NewGroupState extends State<NewGroup> {
                           contentPadding: EdgeInsets.only(left: 16, top: 3),
                         ),
                       ),
-                      onChanged: print,
+                      onChanged: (selectedItem) {
+                        setState(() {
+                          selectedValueController.text = selectedItem!;
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(height: 20.0),
@@ -210,6 +269,20 @@ class _NewGroupState extends State<NewGroup> {
                       },
                     ),
                   ),
+                  ElevatedButton(
+                    onPressed: () {
+                      addGroup();
+                    },
+                    style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStateProperty.all(const Color(0xff10416d)),
+                    ),
+                    child: Text(
+                      "Save",
+                      style: TextStyle(
+                          color: Colors.white), // Set text color to white
+                    ),
+                  )
                 ],
               ),
             ),
