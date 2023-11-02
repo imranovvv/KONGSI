@@ -15,7 +15,18 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   TextEditingController searchController = TextEditingController();
-  List<String> groupNames = ["Family 👪", "Housemates", "Travel", "Tests"];
+  List<String> groupNames = [
+    "Family 👪",
+    "Housemates",
+    "Travel",
+    "Tests",
+    "Housemates",
+    "Travel",
+    "Tests",
+    "Housemates",
+    "Travel",
+    "Tests"
+  ];
   List<String> filteredGroupNames = [];
 
   @override
@@ -175,6 +186,7 @@ class _HomeState extends State<Home> {
               ),
             ),
           ),
+          const SizedBox(height: 90.0),
         ],
       ),
     );

@@ -86,31 +86,8 @@ class _NewGroupState extends State<NewGroup> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: const CustomAppBar(showLogoutButton: false),
-      // bottomNavigationBar: BottomAppBar(
-      //   child: Row(
-      //     mainAxisAlignment: MainAxisAlignment.center,
-      //     children: [
-      //       SizedBox(
-      //         width: MediaQuery.of(context).size.width * 1,
-      //         height: MediaQuery.of(context).size.width * 0.1,
-      //         child: ElevatedButton(
-      //           style: ElevatedButton.styleFrom(
-      //             backgroundColor: const Color(0xff10416d),
-      //             elevation: 0,
-      //           ),
-      //           onPressed: () {
-      //             addGroup();
-      //           },
-      //           child: const Text(
-      //             "Save",
-      //             style: TextStyle(fontSize: 16),
-      //           ),
-      //         ),
-      //       ),
-      //     ],
-      //   ),
-      // ),
       body: Column(
         children: [
           AppBar(
@@ -226,63 +203,72 @@ class _NewGroupState extends State<NewGroup> {
                   ),
                   const SizedBox(height: 20.0),
                   Expanded(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: items.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index < items.length) {
-                          return ListTile(
-                            contentPadding: const EdgeInsets.only(left: 20.0),
-                            title: Text(items[index]),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                removeMember(index);
-                              },
-                            ),
-                          );
-                        } else {
-                          return ListTile(
-                            contentPadding: const EdgeInsets.only(left: 20.0),
-                            title: TextField(
-                              controller: textController,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter name', // Add hint text here
-                              ),
-                              // decoration: BoxDecoration(
-                              //   borderRadius: BorderRadius.circular(30.0),
-                              //   color: Colors.white,
-                              // ),
-                            ),
-                            trailing: Padding(
-                              padding: const EdgeInsets.only(
-                                  right: 0.0), // Adjust the padding value here
-                              child: IconButton(
-                                icon: const Icon(Icons.add),
-                                onPressed: () {
-                                  addMember(textController.text);
-                                },
-                              ),
-                            ),
-                          );
-                        }
-                      },
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: CupertinoScrollbar(
+                        thumbVisibility: true,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: items.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index < items.length) {
+                              return ListTile(
+                                contentPadding:
+                                    const EdgeInsets.only(left: 20.0),
+                                title: Text(items[index]),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    removeMember(index);
+                                  },
+                                ),
+                              );
+                            } else {
+                              return ListTile(
+                                contentPadding:
+                                    const EdgeInsets.only(left: 20.0),
+                                title: TextField(
+                                  controller: textController,
+                                  decoration: const InputDecoration(
+                                    hintText:
+                                        'Enter name', // Add hint text here
+                                  ),
+                                  // decoration: BoxDecoration(
+                                  //   borderRadius: BorderRadius.circular(30.0),
+                                  //   color: Colors.white,
+                                  // ),
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.add),
+                                  onPressed: () {
+                                    addMember(textController.text);
+                                  },
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      addGroup();
-                    },
-                    style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all(const Color(0xff10416d)),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 1,
+                    height: MediaQuery.of(context).size.width * 0.1,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xff10416d),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        addGroup();
+                      },
+                      child: const Text(
+                        "Save",
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
-                    child: Text(
-                      "Save",
-                      style: TextStyle(
-                          color: Colors.white), // Set text color to white
-                    ),
-                  )
+                  ),
+                  const SizedBox(height: 100.0),
                 ],
               ),
             ),
