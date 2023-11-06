@@ -71,17 +71,70 @@ class _NewGroupState extends State<NewGroup> {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
     try {
-      await firestore.collection('groups').add({
+      // Step 1: Add the group to the 'groups' collection
+      DocumentReference groupRef = await firestore.collection('groups').add({
         'groupname': groupNameController.text,
         'description': descriptionController.text,
         'currency': selectedValueController.text,
         'members': items,
       });
+
+      // Step 2: Get the generated groupId
+      String groupId = groupRef.id;
+
+      // Step 3: Update 'groups' array in 'users' collection for each member
+      for (String memberName in items) {
+        // Retrieve the user document based on the user name
+        QuerySnapshot userSnapshot = await firestore
+            .collection('users')
+            .where('name', isEqualTo: memberName)
+            .get();
+
+        // Check if the user exists (this assumes name is unique in 'users' collection)
+        if (userSnapshot.docs.isNotEmpty) {
+          // Get the user ID
+          String userId = userSnapshot.docs.first.id;
+
+          // Update 'groups' array using userId
+          await firestore.collection('users').doc(userId).update({
+            'groups': FieldValue.arrayUnion([groupId]),
+          });
+        } else {
+          print('User with name $memberName not found.');
+          // Handle the case where the user is not found in the 'users' collection
+        }
+      }
+
       print('Group added to Firestore successfully!');
     } catch (e) {
       print('Error adding group to Firestore: $e');
     }
   }
+
+//   void addGroup() async {
+//   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+//   User? user = FirebaseAuth.instance.currentUser;
+
+//   try {
+//     if (user != null) {
+//       DocumentReference groupReference = await firestore.collection('groups').add({
+//         'groupname': groupNameController.text,
+//         'description': descriptionController.text,
+//         'currency': selectedValueController.text,
+//       });
+
+//       String groupId = groupReference.id;
+
+//       await firestore.collection('userGroups').add({
+//         'userId': user.uid,
+//         'groupId': groupId,
+//       });
+//       print('Group added to Firestore successfully! Group ID: $groupId');
+//     }
+//   } catch (e) {
+//     print('Error adding group to Firestore: $e');
+//   }
+// }
 
   @override
   Widget build(BuildContext context) {

@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:kongsi/screens/groupdetailpage.dart';
 import 'package:kongsi/screens/joingroup.dart';
 import 'package:kongsi/screens/newgroup.dart';
 
@@ -13,35 +15,16 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
+bool isSelected = true;
+
 class _HomeState extends State<Home> {
   TextEditingController searchController = TextEditingController();
-  List<String> groupNames = [
-    "Family 👪",
-    "Housemates",
-    "Travel",
-    "Tests",
-    "Housemates",
-    "Travel",
-    "Tests",
-    "Housemates",
-    "Travel",
-    "Tests"
-  ];
+
   List<String> filteredGroupNames = [];
 
   @override
   void initState() {
     super.initState();
-    filteredGroupNames.addAll(groupNames);
-  }
-
-  void filterGroups(String query) {
-    setState(() {
-      filteredGroupNames = groupNames
-          .where((groupName) =>
-              groupName.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    });
   }
 
   void signOut() async {
@@ -50,7 +33,9 @@ class _HomeState extends State<Home> {
     FirebaseAuth.instance.signOut();
   }
 
-  bool isSelected = true;
+  List<String> userGroupNames = [];
+
+  final stream = getUserGroupsStream();
 
   @override
   Widget build(BuildContext context) {
@@ -142,53 +127,107 @@ class _HomeState extends State<Home> {
                   color: Colors.white,
                 ),
                 controller: searchController,
-                onChanged: filterGroups,
                 style: GoogleFonts.poppins(),
               ),
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: CupertinoScrollbar(
-                child: ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  shrinkWrap: true,
-                  itemCount: filteredGroupNames.length,
-                  itemBuilder: (context, index) {
-                    Color tileColor =
-                        index.isOdd ? const Color(0xffECECEC) : Colors.white;
-
-                    return Card(
-                      child: ListTile(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        tileColor: tileColor,
-                        title: Text(filteredGroupNames[index]),
-                        trailing: const Wrap(
-                          spacing: 12,
-                          children: [
-                            Text(
-                              'RM150',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.green,
+          StreamBuilder<List<String>>(
+            stream: stream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator(); // Show a loading indicator while data is being fetched
+              } else if (snapshot.hasError) {
+                return Text(
+                    'Error: ${snapshot.error}'); // Show an error message if there's an error
+              } else {
+                var userGroupNames = snapshot.data ?? [];
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: CupertinoScrollbar(
+                      child: ListView.builder(
+                        scrollDirection: Axis.vertical,
+                        shrinkWrap: true,
+                        itemCount: userGroupNames.length,
+                        itemBuilder: (context, index) {
+                          Color tileColor = index.isOdd
+                              ? const Color(0xffECECEC)
+                              : Colors.white;
+                          return GestureDetector(
+                            onTap: () {
+                              // Navigate to the new page when the user clicks the forward button
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => GroupDetailPage(
+                                      groupName: userGroupNames[index]),
+                                ),
+                              );
+                            },
+                            child: Card(
+                              child: ListTile(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                tileColor: tileColor,
+                                title: Text(userGroupNames[
+                                    index]), // Display group names
+                                trailing: const Wrap(
+                                  spacing: 12,
+                                  children: [
+                                    Text(
+                                      'RM150',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                    Icon(CupertinoIcons.forward),
+                                  ],
+                                ),
                               ),
                             ),
-                            Icon(CupertinoIcons.forward),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
+                    ),
+                  ),
+                );
+              }
+            },
           ),
           const SizedBox(height: 90.0),
         ],
       ),
     );
+  }
+}
+
+Stream<List<String>> getUserGroupsStream() async* {
+  User? user = FirebaseAuth.instance.currentUser;
+  String? userId = user?.uid;
+  if (userId != null) {
+    var userDocument =
+        FirebaseFirestore.instance.collection('users').doc(userId);
+    yield* userDocument.snapshots().map((snapshot) {
+      var groupIds = List<String>.from(snapshot.data()?['groups'] ?? []);
+      return groupIds;
+    }).asyncMap((groupIds) async {
+      var groupNames = <String>[];
+      for (var groupId in groupIds) {
+        var groupDocument = await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(groupId)
+            .get();
+        if (groupDocument.exists) {
+          groupNames.add(groupDocument.data()?['groupname'] ?? 'Unnamed Group');
+        } else {
+          groupNames.add('Group Not Found');
+        }
+      }
+      return groupNames;
+    });
+  } else {
+    yield [];
   }
 }

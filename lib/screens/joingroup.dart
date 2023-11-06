@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:kongsi/components/appbar.dart';
 
 class JoinGroup extends StatefulWidget {
@@ -10,12 +12,11 @@ class JoinGroup extends StatefulWidget {
 
 class _JoinGroupState extends State<JoinGroup> {
   List<String> items = [];
-  TextEditingController textController = TextEditingController();
+  TextEditingController groupNameController = TextEditingController();
 
   void addMember(String name) {
     setState(() {
       items.add(name);
-      textController.clear();
     });
   }
 
@@ -32,49 +33,40 @@ class _JoinGroupState extends State<JoinGroup> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: items.length + 1,
-              itemBuilder: (context, index) {
-                if (index < items.length) {
-                  return ListTile(
-                    contentPadding: const EdgeInsets.only(left: 20.0),
-                    title: Text(items[index]),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        removeMember(index);
-                      },
-                    ),
-                  );
-                } else {
-                  return ListTile(
-                    contentPadding: const EdgeInsets.only(left: 20.0),
-                    title: TextField(
-                      controller: textController,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter name', // Add hint text here
-                      ),
-                    ),
-                    trailing: Padding(
-                      padding: const EdgeInsets.only(
-                          right: 0.0), // Adjust the padding value here
-                      child: IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () {
-                          addMember(textController.text);
-                        },
-                      ),
-                    ),
-                  );
-                }
-              },
+            AppBar(
+              centerTitle: true,
+              title: const Text(
+                'Join Group',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Save'),
+            Container(
+              alignment: Alignment.center,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 30, right: 30, top: 20),
+                child: CupertinoTextField(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5.0),
+                    color: Colors.white,
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.grey, // You can set the shadow color
+                        offset:
+                            Offset(0, 1), // Specify the offset of the shadow
+                        blurRadius: 4, // Specify the blur radius
+                      ),
+                    ],
+                  ),
+                  placeholder: 'Title',
+                  controller: groupNameController,
+                  keyboardType: TextInputType.text,
+                  style: GoogleFonts.poppins(),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                ),
               ),
             ),
           ],
