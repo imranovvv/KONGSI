@@ -50,7 +50,7 @@ class _HomeState extends State<Home> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NewGroup()),
+                CupertinoPageRoute(builder: (context) => const NewGroup()),
               );
             },
           ),
@@ -60,7 +60,7 @@ class _HomeState extends State<Home> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const JoinGroup()),
+                CupertinoPageRoute(builder: (context) => const JoinGroup()),
               );
             },
           ),
@@ -158,7 +158,7 @@ class _HomeState extends State<Home> {
                               // Navigate to the new page when the user clicks the forward button
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
+                                CupertinoPageRoute(
                                   builder: (context) => GroupDetailPage(
                                       groupName: userGroupNames[index]),
                                 ),

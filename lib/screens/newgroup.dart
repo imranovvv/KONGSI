@@ -332,23 +332,23 @@ class _NewGroupState extends State<NewGroup> {
   }
 }
 
-Widget _customPopupItemBuilder(
-    BuildContext context, dynamic item, bool isSelected) {
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 8),
-    decoration: !isSelected
-        ? null
-        : BoxDecoration(
-            border: Border.all(color: Theme.of(context).primaryColor),
-            borderRadius: BorderRadius.circular(5),
-            color: Colors.white,
-          ),
-    child: ListTile(
-      title: Text(item.toString(),
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color.fromARGB(255, 102, 100, 100),
-          )),
-    ),
-  );
-}
+// Widget _customPopupItemBuilder(
+//     BuildContext context, dynamic item, bool isSelected) {
+//   return Container(
+//     margin: const EdgeInsets.symmetric(horizontal: 8),
+//     decoration: !isSelected
+//         ? null
+//         : BoxDecoration(
+//             border: Border.all(color: Theme.of(context).primaryColor),
+//             borderRadius: BorderRadius.circular(5),
+//             color: Colors.white,
+//           ),
+//     child: ListTile(
+//       title: Text(item.toString(),
+//           style: const TextStyle(
+//             fontSize: 14,
+//             color: Color.fromARGB(255, 102, 100, 100),
+//           )),
+//     ),
+//   );
+// }

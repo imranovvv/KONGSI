@@ -1,38 +1,124 @@
 import 'package:flutter/material.dart';
+import 'package:kongsi/components/appbar.dart';
+import 'package:kongsi/screens/groupdetails/balances.dart';
+import 'package:kongsi/screens/groupdetails/expenses.dart';
+import 'package:kongsi/screens/groupdetails/transactions.dart';
 
-class GroupDetailPage extends StatelessWidget {
+class GroupDetailPage extends StatefulWidget {
   final String groupName;
 
   const GroupDetailPage({super.key, required this.groupName});
 
   @override
+  State<GroupDetailPage> createState() => _GroupDetailPageState();
+}
+
+class _GroupDetailPageState extends State<GroupDetailPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    _tabController = TabController(length: 3, vsync: this);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _tabController.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(groupName), // Display the group name in the app bar
-      ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                'Group Details',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+      appBar: const CustomAppBar(showLogoutButton: false),
+      body: Column(
+        children: [
+          AppBar(
+            centerTitle: true,
+            title: Text(
+              widget.groupName,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
-              SizedBox(height: 20),
-              Text(
-                'Group Name: $groupName', // Display the group name
-                style: TextStyle(fontSize: 18),
-              ),
-              // Add more group details here as needed
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 20.0),
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(5.0),
+                  color: const Color(0xffb2c3d1),
+                ),
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.black,
+                tabs: const [
+                  Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Tab(
+                      child: Column(
+                        children: [
+                          Text('Expenses'),
+                          Icon(
+                            Icons.attach_money, // Add your icon here
+                            size: 20, // Adjust the size as needed
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Tab(
+                      child: Column(
+                        children: [
+                          Text('Balances'),
+                          Icon(
+                            Icons.account_balance, // Add your icon here
+                            size: 20, // Adjust the size as needed
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Tab(
+                      child: Column(
+                        children: [
+                          Text('Transactions'),
+                          Icon(
+                            Icons.swap_horiz, // Add your icon here
+                            size: 20, // Adjust the size as needed
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                Expenses(),
+                Balances(),
+                Transactions(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
