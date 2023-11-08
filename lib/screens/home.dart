@@ -145,6 +145,7 @@ class _HomeState extends State<Home> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: CupertinoScrollbar(
+                      thumbVisibility: true,
                       child: ListView.builder(
                         scrollDirection: Axis.vertical,
                         shrinkWrap: true,
@@ -221,9 +222,7 @@ Stream<List<String>> getUserGroupsStream() async* {
             .get();
         if (groupDocument.exists) {
           groupNames.add(groupDocument.data()?['groupname'] ?? 'Unnamed Group');
-        } else {
-          groupNames.add('Group Not Found');
-        }
+        } else {}
       }
       return groupNames;
     });
