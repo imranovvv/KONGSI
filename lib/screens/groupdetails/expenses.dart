@@ -20,7 +20,6 @@ class _Expenses extends State<Expenses> {
     ),
   ];
 
-  bool isSearching = false; // Track the visibility of the search field
   TextEditingController searchController = TextEditingController();
 
   @override
@@ -29,44 +28,29 @@ class _Expenses extends State<Expenses> {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          if (isSearching)
-            CupertinoSearchTextField(
-              controller: searchController,
-              onChanged: (value) {},
-              onSubmitted: (value) {
-                setState(() {
-                  isSearching = false;
-                });
-              },
-            )
-          else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                CupertinoButton(
-                  child: const Icon(
-                    CupertinoIcons.search,
-                    color: Colors.black, // Set the color to black
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      isSearching = true;
-                    });
+          Row(
+            children: [
+              Expanded(
+                child: CupertinoSearchTextField(
+                  placeholder: 'Search',
+                  onSubmitted: (String value) {
+                    // Handle search when the user submits the text.
+                    print('Search: $value');
                   },
-                ),
-                CupertinoButton(
-                  child: const Icon(
-                    Icons.tune,
-                    color: Colors.black, // Set the color to black
+                  decoration: const BoxDecoration(
+                    color: Colors.transparent,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      isSearching = true;
-                    });
-                  },
                 ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.tune),
+                onPressed: () {
+                  // Handle the tune button press.
+                  print('Tune button pressed');
+                },
+              ),
+            ],
+          ),
           Expanded(
             child: ListView.builder(
               itemCount: expenses.length,
@@ -75,7 +59,10 @@ class _Expenses extends State<Expenses> {
                 return Column(
                   children: [
                     ListTile(
-                      title: Text(expense.id),
+                      title: Text(
+                        expense.id,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Text(
                         expense.date.toString(),
                         style: const TextStyle(
@@ -86,7 +73,11 @@ class _Expenses extends State<Expenses> {
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Column(
                           children: [
-                            Text('\$${expense.amount.toStringAsFixed(2)}'),
+                            Text(
+                              '\$${expense.amount.toStringAsFixed(2)}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             Text(
                               expense.payer,
                               style: const TextStyle(
@@ -107,6 +98,49 @@ class _Expenses extends State<Expenses> {
               },
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 10.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                  child: const Column(
+                    children: [
+                      Text(
+                        "My Total:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text("RM 300"),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                  child: const Column(
+                    children: [
+                      Text(
+                        "Total:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text("RM 500"),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(
+            height: 80,
+          )
         ],
       ),
     );

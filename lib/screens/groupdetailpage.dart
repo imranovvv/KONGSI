@@ -32,6 +32,19 @@ class _GroupDetailPageState extends State<GroupDetailPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xff10416d),
+          onPressed: () {
+            // Handle FAB button press
+            print('FAB button pressed');
+          },
+          child: Icon(Icons.add),
+        ),
+      ),
       appBar: const CustomAppBar(showLogoutButton: false),
       body: Column(
         children: [
