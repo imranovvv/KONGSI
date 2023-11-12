@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:kongsi/components/appbar.dart';
+import 'package:kongsi/screens/groupdetails/addexpense.dart';
 import 'package:kongsi/screens/groupdetails/balances.dart';
 import 'package:kongsi/screens/groupdetails/expenses.dart';
 import 'package:kongsi/screens/groupdetails/transactions.dart';
@@ -39,10 +41,16 @@ class _GroupDetailPageState extends State<GroupDetailPage>
         child: FloatingActionButton(
           backgroundColor: const Color(0xff10416d),
           onPressed: () {
-            // Handle FAB button press
+            Navigator.push(
+              context,
+              CupertinoPageRoute(
+                builder: (context) =>
+                    const AddExpense(), // Replace with the actual name of your AddExpense page class
+              ),
+            );
             print('FAB button pressed');
           },
-          child: Icon(Icons.add),
+          child: const Icon(Icons.add),
         ),
       ),
       appBar: const CustomAppBar(showLogoutButton: false),

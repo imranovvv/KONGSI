@@ -69,14 +69,23 @@ class _NewGroupState extends State<NewGroup> {
 
   void addGroup() async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    User? user = FirebaseAuth.instance.currentUser;
 
     try {
-      // Step 1: Add the group to the 'groups' collection
+      Map<String, dynamic> membersMap = {};
+      for (var i = 0; i < items.length; i++) {
+        if (i == 0) {
+          membersMap[items[i]] = user?.uid ?? '';
+        } else {
+          membersMap[items[i]] = '';
+        }
+      }
+
       DocumentReference groupRef = await firestore.collection('groups').add({
         'groupname': groupNameController.text,
         'description': descriptionController.text,
         'currency': selectedValueController.text,
-        'members': items,
+        'members': membersMap,
       });
 
       // Step 2: Get the generated groupId
@@ -110,31 +119,6 @@ class _NewGroupState extends State<NewGroup> {
       print('Error adding group to Firestore: $e');
     }
   }
-
-//   void addGroup() async {
-//   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-//   User? user = FirebaseAuth.instance.currentUser;
-
-//   try {
-//     if (user != null) {
-//       DocumentReference groupReference = await firestore.collection('groups').add({
-//         'groupname': groupNameController.text,
-//         'description': descriptionController.text,
-//         'currency': selectedValueController.text,
-//       });
-
-//       String groupId = groupReference.id;
-
-//       await firestore.collection('userGroups').add({
-//         'userId': user.uid,
-//         'groupId': groupId,
-//       });
-//       print('Group added to Firestore successfully! Group ID: $groupId');
-//     }
-//   } catch (e) {
-//     print('Error adding group to Firestore: $e');
-//   }
-// }
 
   @override
   Widget build(BuildContext context) {
