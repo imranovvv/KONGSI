@@ -36,7 +36,6 @@ class _HomeState extends State<Home> {
   List<String> userGroupNames = [];
 
   final stream = getUserGroupsStream();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -135,12 +134,12 @@ class _HomeState extends State<Home> {
             stream: stream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const CircularProgressIndicator(); // Show a loading indicator while data is being fetched
+                return const CupertinoActivityIndicator();
               } else if (snapshot.hasError) {
                 return Text(
                     'Error: ${snapshot.error}'); // Show an error message if there's an error
               } else {
-                var userGroupNames = snapshot.data ?? [];
+                var groupIds = snapshot.data ?? [];
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -149,7 +148,7 @@ class _HomeState extends State<Home> {
                       child: ListView.builder(
                         scrollDirection: Axis.vertical,
                         shrinkWrap: true,
-                        itemCount: userGroupNames.length,
+                        itemCount: groupIds.length,
                         itemBuilder: (context, index) {
                           Color tileColor = index.isOdd
                               ? const Color(0xffECECEC)
@@ -161,7 +160,7 @@ class _HomeState extends State<Home> {
                                 context,
                                 CupertinoPageRoute(
                                   builder: (context) => GroupDetailPage(
-                                      groupName: userGroupNames[index]),
+                                      groupName: groupIds[index]),
                                 ),
                               );
                             },
@@ -171,8 +170,8 @@ class _HomeState extends State<Home> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 tileColor: tileColor,
-                                title: Text(userGroupNames[
-                                    index]), // Display group names
+                                title: buildGroupNameFutureBuilder(
+                                    groupIds[index]), // Display group names
                                 trailing: const Wrap(
                                   spacing: 12,
                                   children: [
@@ -214,19 +213,24 @@ Stream<List<String>> getUserGroupsStream() async* {
       var groupIds = List<String>.from(snapshot.data()?['groups'] ?? []);
       return groupIds;
     }).asyncMap((groupIds) async {
-      var groupNames = <String>[];
-      for (var groupId in groupIds) {
-        var groupDocument = await FirebaseFirestore.instance
-            .collection('groups')
-            .doc(groupId)
-            .get();
-        if (groupDocument.exists) {
-          groupNames.add(groupDocument.data()?['groupname'] ?? 'Unnamed Group');
-        } else {}
-      }
-      return groupNames;
+      return groupIds;
     });
   } else {
     yield [];
   }
+}
+
+FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>
+    buildGroupNameFutureBuilder(String groupId) {
+  return FutureBuilder(
+    future: FirebaseFirestore.instance.collection('groups').doc(groupId).get(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const SizedBox.shrink();
+      } else {
+        var groupName = snapshot.data?['groupname'];
+        return Text(groupName);
+      }
+    },
+  );
 }

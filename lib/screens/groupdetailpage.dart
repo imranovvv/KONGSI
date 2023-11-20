@@ -84,7 +84,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                 unselectedLabelColor: Colors.black,
                 tabs: const [
                   Padding(
-                    padding: EdgeInsets.only(top: 2),
+                    padding: EdgeInsets.only(top: 0),
                     child: Tab(
                       child: Column(
                         children: [
@@ -98,7 +98,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(top: 2),
+                    padding: EdgeInsets.only(top: 0),
                     child: Tab(
                       child: Column(
                         children: [
@@ -112,7 +112,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(top: 2),
+                    padding: EdgeInsets.only(top: 0),
                     child: Tab(
                       child: Column(
                         children: [
