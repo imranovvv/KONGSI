@@ -136,8 +136,7 @@ class _HomeState extends State<Home> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const CupertinoActivityIndicator();
               } else if (snapshot.hasError) {
-                return Text(
-                    'Error: ${snapshot.error}'); // Show an error message if there's an error
+                return Text('Error: ${snapshot.error}');
               } else {
                 var groupIds = snapshot.data ?? [];
                 return Expanded(
@@ -155,7 +154,6 @@ class _HomeState extends State<Home> {
                               : Colors.white;
                           return GestureDetector(
                             onTap: () {
-                              // Navigate to the new page when the user clicks the forward button
                               Navigator.push(
                                 context,
                                 CupertinoPageRoute(
@@ -170,8 +168,7 @@ class _HomeState extends State<Home> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 tileColor: tileColor,
-                                title: buildGroupNameFutureBuilder(
-                                    groupIds[index]), // Display group names
+                                title: Text(groupIds[index]),
                                 trailing: const Wrap(
                                   spacing: 12,
                                   children: [
@@ -203,6 +200,7 @@ class _HomeState extends State<Home> {
   }
 }
 
+// Get Group Name
 Stream<List<String>> getUserGroupsStream() async* {
   User? user = FirebaseAuth.instance.currentUser;
   String? userId = user?.uid;
@@ -210,27 +208,35 @@ Stream<List<String>> getUserGroupsStream() async* {
     var userDocument =
         FirebaseFirestore.instance.collection('users').doc(userId);
     yield* userDocument.snapshots().map((snapshot) {
-      var groupIds = List<String>.from(snapshot.data()?['groups'] ?? []);
-      return groupIds;
-    }).asyncMap((groupIds) async {
-      return groupIds;
+      var groupMap =
+          Map<String, dynamic>.from(snapshot.data()?['groups'] ?? {});
+      var groupNames = groupMap.keys.toList();
+      return groupNames;
+    }).asyncMap((groupNames) async {
+      return groupNames;
     });
   } else {
     yield [];
   }
 }
 
-FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>
-    buildGroupNameFutureBuilder(String groupId) {
-  return FutureBuilder(
-    future: FirebaseFirestore.instance.collection('groups').doc(groupId).get(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const SizedBox.shrink();
-      } else {
-        var groupName = snapshot.data?['groupname'];
-        return Text(groupName);
-      }
-    },
-  );
-}
+
+// Get Group ID
+// Stream<List<String>> getUserGroupsStream() async* {
+//   User? user = FirebaseAuth.instance.currentUser;
+//   String? userId = user?.uid;
+//   if (userId != null) {
+//     var userDocument =
+//         FirebaseFirestore.instance.collection('users').doc(userId);
+//     yield* userDocument.snapshots().map((snapshot) {
+//       var groupsMap =
+//           Map<String, dynamic>.from(snapshot.data()?['groups'] ?? {});
+//       var groupValues = groupsMap.values.cast<String>().toList();
+//       return groupValues;
+//     }).asyncMap((groupValues) async {
+//       return groupValues;
+//     });
+//   } else {
+//     yield [];
+//   }
+// }

@@ -91,7 +91,7 @@ class _NewGroupState extends State<NewGroup> {
       // Step 2: Get the generated groupId
       String groupId = groupRef.id;
 
-      // Step 3: Update 'groups' array in 'users' collection for each member
+      // Step 3: Update 'groups' map in 'users' collection for each member
       for (String memberName in items) {
         // Retrieve the user document based on the user name
         QuerySnapshot userSnapshot = await firestore
@@ -104,9 +104,21 @@ class _NewGroupState extends State<NewGroup> {
           // Get the user ID
           String userId = userSnapshot.docs.first.id;
 
-          // Update 'groups' array using userId
+          // Create a map with the new group information
+          Map<String, dynamic> newGroup = {
+            groupNameController.text: groupId,
+          };
+
+          // Get the current 'groups' map of the user
+          Map<String, dynamic>? currentGroups =
+              userSnapshot.docs.first['groups'];
+
+          // Merge the new group information with the current 'groups' map
+          currentGroups?.addAll(newGroup);
+
+          // Update 'groups' map in the user's document
           await firestore.collection('users').doc(userId).update({
-            'groups': FieldValue.arrayUnion([groupId]),
+            'groups': currentGroups,
           });
         } else {
           print('User with name $memberName not found.');
@@ -115,6 +127,7 @@ class _NewGroupState extends State<NewGroup> {
       }
 
       print('Group added to Firestore successfully!');
+      if (context.mounted) Navigator.of(context).pop();
     } catch (e) {
       print('Error adding group to Firestore: $e');
     }
