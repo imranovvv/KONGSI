@@ -1,3 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class Member {
@@ -15,51 +18,79 @@ class Balances extends StatefulWidget {
 }
 
 class _BalancesState extends State<Balances> {
-  // Sample list of members
-  final List<Member> members = [
-    Member(name: 'Member 1', balance: 100.0),
-    Member(name: 'Member 2', balance: -50.0),
-    Member(name: 'Member 3', balance: 75.0),
-    Member(name: 'Member 4', balance: -30.0),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView.builder(
-        itemCount: members.length,
-        itemBuilder: (context, index) {
-          final member = members[index];
-
-          return Container(
-            height: 100,
-            child: ListTile(
-              title: Text(member.name),
-              trailing: Column(
-                children: [
-                  // Expanded(
-                  //   child: Slider(
-                  //     value: member.balance,
-                  //     min: -100,
-                  //     max: 100,
-                  //     onChanged: (value) {
-                  //       // Handle slider value change if needed
-                  //     },
-                  //   ),
-                  // ),
-                  Text(
-                    member.balance.toStringAsFixed(2),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
+      body: StreamBuilder<List<String>>(
+        stream: getUserGroupsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CupertinoActivityIndicator();
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else {
+            var groups = snapshot.data ?? [];
+            return StreamBuilder<List<String>>(
+              stream: getGroupMembers(groups),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CupertinoActivityIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  var members = snapshot.data ?? [];
+                  return ListView.builder(
+                    itemCount: members.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(members[index]),
+                        // You can customize the ListTile further based on your requirements
+                      );
+                    },
+                  );
+                }
+              },
+            );
+          }
         },
       ),
     );
+  }
+}
+
+Stream<List<String>> getUserGroupsStream() async* {
+  User? user = FirebaseAuth.instance.currentUser;
+  String? userId = user?.uid;
+  if (userId != null) {
+    var userDocument =
+        FirebaseFirestore.instance.collection('users').doc(userId);
+    yield* userDocument.snapshots().map((snapshot) {
+      var groupMap =
+          Map<String, dynamic>.from(snapshot.data()?['groups'] ?? {});
+      var groupNames = groupMap.keys.toList();
+      print(groupNames); // Print group members
+      return groupNames;
+    }).asyncMap((groupNames) async {
+      return groupNames;
+    });
+  } else {
+    yield [];
+  }
+}
+
+Stream<List<String>> getGroupMembers(List<String> groupValues) async* {
+  for (var groupName in groupValues) {
+    var groupDocument =
+        FirebaseFirestore.instance.collection('groups').doc(groupName);
+
+    yield* groupDocument.snapshots().map((snapshot) {
+      var members = List<String>.from(snapshot.data()?['members'] ?? []);
+      print('Group Members for $groupName: $members'); // Print group members
+
+      return members;
+    }).asyncMap((members) async {
+      // You can perform additional asynchronous operations here if needed
+      return members;
+    });
   }
 }

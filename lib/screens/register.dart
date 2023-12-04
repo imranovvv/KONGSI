@@ -54,6 +54,7 @@ class _RegisterState extends State<Register> {
     var uid = FirebaseAuth.instance.currentUser?.uid;
     await FirebaseFirestore.instance.collection('users').doc(uid).set({
       'name': name,
+      'groups': {},
       'email': email,
     });
   }
