@@ -9,7 +9,7 @@ import 'package:kongsi/screens/joingroup.dart';
 import 'package:kongsi/screens/newgroup.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  const Home({Key? key});
 
   @override
   State<Home> createState() => _HomeState();
@@ -28,18 +28,16 @@ class _HomeState extends State<Home> {
   }
 
   void signOut() async {
-    Navigator.of(context).pop();
-
-    FirebaseAuth.instance.signOut();
+    await FirebaseAuth.instance.signOut();
   }
 
   List<String> userGroupNames = [];
 
-  final stream = getUserGroupsStream();
+  Stream<Map<String, dynamic>> stream = getUserGroupsMapStream();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: SpeedDial(
         backgroundColor: const Color(0xff10416d),
         children: [
@@ -85,7 +83,6 @@ class _HomeState extends State<Home> {
               : const Icon(Icons.clear, key: Key('clearIcon')),
         ),
       ),
-
       body: Column(
         children: [
           AppBar(
@@ -130,7 +127,7 @@ class _HomeState extends State<Home> {
               ),
             ),
           ),
-          StreamBuilder<List<String>>(
+          StreamBuilder<Map<String, dynamic>>(
             stream: stream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -138,7 +135,11 @@ class _HomeState extends State<Home> {
               } else if (snapshot.hasError) {
                 return Text('Error: ${snapshot.error}');
               } else {
-                var groupIds = snapshot.data ?? [];
+                var groupsMap =
+                    snapshot.data?['groups'] as Map<String, dynamic>? ?? {};
+                var groupNames = groupsMap.keys.toList();
+                var groupIds = groupsMap.values.cast<String>().toList();
+
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -147,7 +148,7 @@ class _HomeState extends State<Home> {
                       child: ListView.builder(
                         scrollDirection: Axis.vertical,
                         shrinkWrap: true,
-                        itemCount: groupIds.length,
+                        itemCount: groupNames.length,
                         itemBuilder: (context, index) {
                           Color tileColor = index.isOdd
                               ? const Color(0xffECECEC)
@@ -158,7 +159,9 @@ class _HomeState extends State<Home> {
                                 context,
                                 CupertinoPageRoute(
                                   builder: (context) => GroupDetailPage(
-                                      groupName: groupIds[index]),
+                                    groupName: groupNames[index],
+                                    groupId: groupIds[index],
+                                  ),
                                 ),
                               );
                             },
@@ -168,7 +171,7 @@ class _HomeState extends State<Home> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 tileColor: tileColor,
-                                title: Text(groupIds[index]),
+                                title: Text(groupNames[index]),
                                 trailing: const Wrap(
                                   spacing: 12,
                                   children: [
@@ -200,43 +203,18 @@ class _HomeState extends State<Home> {
   }
 }
 
-// Get Group Name
-Stream<List<String>> getUserGroupsStream() async* {
+Stream<Map<String, dynamic>> getUserGroupsMapStream() async* {
   User? user = FirebaseAuth.instance.currentUser;
   String? userId = user?.uid;
   if (userId != null) {
     var userDocument =
         FirebaseFirestore.instance.collection('users').doc(userId);
     yield* userDocument.snapshots().map((snapshot) {
-      var groupMap =
+      var groupsMap =
           Map<String, dynamic>.from(snapshot.data()?['groups'] ?? {});
-      var groupNames = groupMap.keys.toList();
-      return groupNames;
-    }).asyncMap((groupNames) async {
-      return groupNames;
+      return {'groups': groupsMap};
     });
   } else {
-    yield [];
+    yield {'groups': {}};
   }
 }
-
-
-// Get Group ID
-// Stream<List<String>> getUserGroupsStream() async* {
-//   User? user = FirebaseAuth.instance.currentUser;
-//   String? userId = user?.uid;
-//   if (userId != null) {
-//     var userDocument =
-//         FirebaseFirestore.instance.collection('users').doc(userId);
-//     yield* userDocument.snapshots().map((snapshot) {
-//       var groupsMap =
-//           Map<String, dynamic>.from(snapshot.data()?['groups'] ?? {});
-//       var groupValues = groupsMap.values.cast<String>().toList();
-//       return groupValues;
-//     }).asyncMap((groupValues) async {
-//       return groupValues;
-//     });
-//   } else {
-//     yield [];
-//   }
-// }

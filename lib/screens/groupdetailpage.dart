@@ -8,8 +8,10 @@ import 'package:kongsi/screens/groupdetails/transactions.dart';
 
 class GroupDetailPage extends StatefulWidget {
   final String groupName;
+  final String groupId;
 
-  const GroupDetailPage({super.key, required this.groupName});
+  const GroupDetailPage(
+      {super.key, required this.groupName, required this.groupId});
 
   @override
   State<GroupDetailPage> createState() => _GroupDetailPageState();
@@ -44,8 +46,9 @@ class _GroupDetailPageState extends State<GroupDetailPage>
             Navigator.push(
               context,
               CupertinoPageRoute(
-                builder: (context) =>
-                    const AddExpense(), // Replace with the actual name of your AddExpense page class
+                builder: (context) => AddExpense(
+                    groupId: widget
+                        .groupId), // Replace with the actual name of your AddExpense page class
               ),
             );
             print('FAB button pressed');
@@ -132,10 +135,10 @@ class _GroupDetailPageState extends State<GroupDetailPage>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [
-                Expenses(),
-                Balances(),
-                Transactions(),
+              children: [
+                const Expenses(),
+                Balances(groupId: widget.groupId),
+                const Transactions(),
               ],
             ),
           ),
