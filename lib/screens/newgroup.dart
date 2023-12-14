@@ -14,338 +14,213 @@ class NewGroup extends StatefulWidget {
 }
 
 class _NewGroupState extends State<NewGroup> {
+  final TextEditingController groupNameController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController textController = TextEditingController();
+  final TextEditingController selectedValueController = TextEditingController();
+
+  final List<String> members = [];
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
     fetchUserData();
   }
 
-  TextEditingController groupNameController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  TextEditingController textController = TextEditingController();
-  TextEditingController selectedValueController = TextEditingController();
+  Future<void> fetchUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    String currentUserDisplayName = user != null
+        ? (await firestore.collection('users').doc(user.uid).get()).get('name')
+        : 'Guest';
 
-  final List<String> items = [];
-
-  void addMember(String name) {
     setState(() {
-      items.add(name);
-      textController.clear();
+      members.insert(0, currentUserDisplayName);
     });
-  }
-
-  void removeMember(int index) {
-    setState(() {
-      items.removeAt(index);
-    });
-  }
-
-  Future fetchUserData() async {
-    try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-
-        if (userDoc.exists) {
-          String currentUserDisplayName = userDoc.get('name');
-
-          setState(() {
-            items.insert(0, currentUserDisplayName);
-          });
-        }
-      } else {
-        String currentUserDisplayName = 'Guest';
-        setState(() {
-          items.insert(0, currentUserDisplayName);
-        });
-      }
-    } catch (e) {
-      print("Error fetching user data: $e");
-    }
   }
 
   void addGroup() async {
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    User? user = FirebaseAuth.instance.currentUser;
-
     try {
-      Map<String, dynamic> membersMap = {};
-      for (var i = 0; i < items.length; i++) {
-        if (i == 0) {
-          membersMap[items[i]] = user?.uid ?? '';
-        } else {
-          membersMap[items[i]] = '';
-        }
-      }
+      Map<String, String> membersMap = {
+        for (var member in members)
+          member: member == members.first
+              ? FirebaseAuth.instance.currentUser?.uid ?? ''
+              : ''
+      };
 
-      DocumentReference groupRef = await firestore.collection('groups').add({
+      String groupId = (await firestore.collection('groups').add({
         'groupname': groupNameController.text,
         'description': descriptionController.text,
         'currency': selectedValueController.text,
         'members': membersMap,
-      });
+      }))
+          .id;
 
-      // Step 2: Get the generated groupId
-      String groupId = groupRef.id;
-
-      // Step 3: Update 'groups' map in 'users' collection for each member
-      for (String memberName in items) {
-        // Retrieve the user document based on the user name
-        QuerySnapshot userSnapshot = await firestore
+      await Future.forEach<String>(members, (memberName) async {
+        var userSnapshot = await firestore
             .collection('users')
             .where('name', isEqualTo: memberName)
             .get();
-
-        // Check if the user exists (this assumes name is unique in 'users' collection)
         if (userSnapshot.docs.isNotEmpty) {
-          // Get the user ID
-          String userId = userSnapshot.docs.first.id;
-
-          // Create a map with the new group information
-          Map<String, dynamic> newGroup = {
-            groupNameController.text: groupId,
-          };
-
-          // Get the current 'groups' map of the user
-          Map<String, dynamic>? currentGroups =
-              userSnapshot.docs.first['groups'];
-
-          // Merge the new group information with the current 'groups' map
-          currentGroups?.addAll(newGroup);
-
-          // Update 'groups' map in the user's document
+          var userId = userSnapshot.docs.first.id;
+          var currentGroups = userSnapshot.docs.first.get('groups');
           await firestore.collection('users').doc(userId).update({
-            'groups': currentGroups,
+            'groups': {...currentGroups, groupNameController.text: groupId},
           });
-        } else {
-          print('User with name $memberName not found.');
-          // Handle the case where the user is not found in the 'users' collection
         }
-      }
+      });
 
-      print('Group added to Firestore successfully!');
-      if (context.mounted) Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
     } catch (e) {
       print('Error adding group to Firestore: $e');
     }
   }
 
+  Widget buildMemberList() {
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemCount: members.length + 1,
+      itemBuilder: (context, index) {
+        if (index < members.length) {
+          return memberTile(index);
+        } else {
+          return addMemberTile();
+        }
+      },
+    );
+  }
+
+  Widget memberTile(int index) {
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 20.0),
+      title: Text(members[index]),
+      trailing: IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () => setState(() => members.removeAt(index)),
+      ),
+    );
+  }
+
+  Widget addMemberTile() {
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 20.0),
+      title: TextField(
+        controller: textController,
+        decoration: const InputDecoration(hintText: 'Enter name'),
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.add),
+        onPressed: () {
+          if (textController.text.isNotEmpty) {
+            setState(() {
+              members.add(textController.text);
+              textController.clear();
+            });
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: const CustomAppBar(showLogoutButton: false),
-      body: Column(
-        children: [
-          AppBar(
-            centerTitle: true,
-            title: const Text(
-              'New Group',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            AppBar(
+              centerTitle: true,
+              title: const Text('New Group',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 30, right: 30, top: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
               child: Column(
                 children: [
-                  CupertinoTextField(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5.0),
-                      color: Colors.white,
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.grey, // You can set the shadow color
-                          offset:
-                              Offset(0, 1), // Specify the offset of the shadow
-                          blurRadius: 4, // Specify the blur radius
-                        ),
-                      ],
-                    ),
-                    placeholder: 'Title',
-                    controller: groupNameController,
-                    keyboardType: TextInputType.text,
-                    style: GoogleFonts.poppins(),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  ),
+                  buildTextField(groupNameController, 'Title'),
                   const SizedBox(height: 20.0),
-                  CupertinoTextField(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5.0),
-                      color: Colors.white,
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.grey, // You can set the shadow color
-                          offset:
-                              Offset(0, 1), // Specify the offset of the shadow
-                          blurRadius: 4, // Specify the blur radius
-                        ),
-                      ],
-                    ),
-                    placeholder: 'Description',
-                    controller: descriptionController,
-                    keyboardType: TextInputType.text,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    clearButtonMode: OverlayVisibilityMode.editing,
-                    style: GoogleFonts.poppins(),
-                  ),
+                  buildTextField(descriptionController, 'Description'),
                   const SizedBox(height: 20.0),
-                  Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5.0),
-                      color: Colors.white,
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.grey, // You can set the shadow color
-                          offset:
-                              Offset(0, 1), // Specify the offset of the shadow
-                          blurRadius: 4, // Specify the blur radius
-                        ),
-                      ],
-                    ),
-                    child: DropdownSearch<String>(
-                      popupProps: PopupProps.menu(
-                        constraints: const BoxConstraints.tightFor(
-                          height: 300,
-                        ),
-                        showSearchBox: true,
-                        searchDelay: Duration.zero,
-                        showSelectedItems: true,
-                        containerBuilder: (ctx, popupWidget) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(5.0),
-                            ),
-                            child: popupWidget,
-                          );
-                        },
-                      ),
-                      items: const [
-                        "MYR",
-                        "USD",
-                        "EUR",
-                      ],
-                      dropdownDecoratorProps: const DropDownDecoratorProps(
-                        dropdownSearchDecoration: InputDecoration(
-                          hintText: "Select currency",
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.only(left: 16, top: 3),
-                        ),
-                      ),
-                      onChanged: (selectedItem) {
-                        setState(() {
-                          selectedValueController.text = selectedItem!;
-                        });
-                      },
-                    ),
-                  ),
+                  buildCurrencyDropdown(),
                   const SizedBox(height: 20.0),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: CupertinoScrollbar(
-                        thumbVisibility: true,
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: items.length + 1,
-                          itemBuilder: (context, index) {
-                            if (index < items.length) {
-                              return ListTile(
-                                contentPadding:
-                                    const EdgeInsets.only(left: 20.0),
-                                title: Text(items[index]),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    removeMember(index);
-                                  },
-                                ),
-                              );
-                            } else {
-                              return ListTile(
-                                contentPadding:
-                                    const EdgeInsets.only(left: 20.0),
-                                title: TextField(
-                                  controller: textController,
-                                  decoration: const InputDecoration(
-                                    hintText:
-                                        'Enter name', // Add hint text here
-                                  ),
-                                  // decoration: BoxDecoration(
-                                  //   borderRadius: BorderRadius.circular(30.0),
-                                  //   color: Colors.white,
-                                  // ),
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.add),
-                                  onPressed: () {
-                                    addMember(textController.text);
-                                  },
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: CupertinoScrollbar(child: buildMemberList()),
                   ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 1,
-                    height: MediaQuery.of(context).size.width * 0.1,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff10416d),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        addGroup();
-                      },
-                      child: const Text(
-                        "Save",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 100.0),
+                  buildSaveButton(),
+                  const SizedBox(height: 20.0),
                 ],
               ),
             ),
-          ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildTextField(TextEditingController controller, String placeholder) {
+    return CupertinoTextField(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5.0),
+        color: Colors.white,
+        boxShadow: const [
+          BoxShadow(color: Colors.grey, offset: Offset(0, 1), blurRadius: 4)
         ],
+      ),
+      placeholder: placeholder,
+      controller: controller,
+      keyboardType: TextInputType.text,
+      style: GoogleFonts.poppins(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    );
+  }
+
+  Widget buildCurrencyDropdown() {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5.0),
+        color: Colors.white,
+        boxShadow: const [
+          BoxShadow(color: Colors.grey, offset: Offset(0, 1), blurRadius: 4)
+        ],
+      ),
+      child: DropdownSearch<String>(
+        popupProps: PopupProps.menu(
+          showSearchBox: true,
+          constraints: const BoxConstraints.tightFor(height: 300),
+          containerBuilder: (ctx, popupWidget) => Container(
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(5.0)),
+            child: popupWidget,
+          ),
+        ),
+        items: const ["MYR", "USD", "EUR"],
+        dropdownDecoratorProps: const DropDownDecoratorProps(
+          dropdownSearchDecoration: InputDecoration(
+            hintText: "Select currency",
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.only(left: 16, top: 3),
+          ),
+        ),
+        onChanged: (selectedItem) =>
+            selectedValueController.text = selectedItem ?? '',
+      ),
+    );
+  }
+
+  Widget buildSaveButton() {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height * 0.05,
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        color: const Color(0xff10416d),
+        onPressed: addGroup,
+        child: const Text("Save", style: TextStyle(fontSize: 16)),
       ),
     );
   }
 }
-
-// Widget _customPopupItemBuilder(
-//     BuildContext context, dynamic item, bool isSelected) {
-//   return Container(
-//     margin: const EdgeInsets.symmetric(horizontal: 8),
-//     decoration: !isSelected
-//         ? null
-//         : BoxDecoration(
-//             border: Border.all(color: Theme.of(context).primaryColor),
-//             borderRadius: BorderRadius.circular(5),
-//             color: Colors.white,
-//           ),
-//     child: ListTile(
-//       title: Text(item.toString(),
-//           style: const TextStyle(
-//             fontSize: 14,
-//             color: Color.fromARGB(255, 102, 100, 100),
-//           )),
-//     ),
-//   );
-// }
