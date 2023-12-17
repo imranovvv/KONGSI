@@ -18,7 +18,7 @@ class _Expenses extends State<Expenses> {
       amount: 100.00,
       payer: 'Ali',
       group: 'group_id_1',
-      splitType: "equal",
+      splitType: "test",
     ),
   ];
 
