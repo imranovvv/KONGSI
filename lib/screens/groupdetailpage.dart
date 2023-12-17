@@ -136,7 +136,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                const Expenses(),
+                Expenses(groupId: widget.groupId),
                 Balances(groupId: widget.groupId),
                 const Transactions(),
               ],

@@ -25,22 +25,24 @@ class _AddExpenseState extends State<AddExpense> {
   StreamController<List<String>> membersStreamController =
       StreamController<List<String>>();
   Set<String> selectedMembers = {};
-  double sharePerMember = 0.0; // State variable to store share per member
-  bool isCustomSplit = false; // State variable to track split type
+  bool isCustomSplit = false;
+  double splitAmounts = 0.0;
   Map<String, double> customAmounts = {};
+  Map<double, TextEditingController> customAmountControllers = {};
+
   @override
   void initState() {
     super.initState();
     selectedDate = DateTime.now();
     dateController.text = formatDate(selectedDate);
     fetchGroupMembers();
-    amountController.addListener(_updateShare);
+    amountController.addListener(_updateSplitAmount);
   }
 
-  void _updateShare() {
+  void _updateSplitAmount() {
     double amount = double.tryParse(amountController.text) ?? 0.0;
     setState(() {
-      sharePerMember = (selectedMembers.isNotEmpty && amount > 0)
+      splitAmounts = (selectedMembers.isNotEmpty && amount > 0)
           ? amount / selectedMembers.length
           : 0.0;
     });
@@ -48,7 +50,7 @@ class _AddExpenseState extends State<AddExpense> {
 
   @override
   void dispose() {
-    amountController.removeListener(_updateShare);
+    amountController.removeListener(_updateSplitAmount);
     amountController.dispose();
     super.dispose();
     membersStreamController.close(); // Close the stream controller
@@ -71,6 +73,10 @@ class _AddExpenseState extends State<AddExpense> {
               groupMembers = members;
               selectedPaidBy = members.first;
               selectedMembers = Set.from(members);
+              for (double i = 0; i < members.length; i++) {
+                customAmountControllers[i] = TextEditingController(text: '0');
+                ;
+              }
             });
             membersStreamController.add(members);
           }
@@ -181,7 +187,7 @@ class _AddExpenseState extends State<AddExpense> {
                 child: CupertinoButton(
                   padding: EdgeInsets.zero,
                   color: const Color(0xff10416d),
-                  onPressed: () {},
+                  onPressed: _saveExpense,
                   child: const Text(
                     "Save",
                     style: TextStyle(fontSize: 16),
@@ -273,6 +279,10 @@ class _AddExpenseState extends State<AddExpense> {
                     isCustomSplit = !isCustomSplit;
                     if (!isCustomSplit) {
                       customAmounts.clear();
+                      for (var controller in customAmountControllers.values) {
+                        controller.text = '0';
+                      }
+                      amountController.clear();
                     }
                   });
                 },
@@ -301,12 +311,15 @@ class _AddExpenseState extends State<AddExpense> {
                 return InkWell(
                   onTap: () {
                     setState(() {
-                      if (isSelected) {
-                        selectedMembers.remove(member);
-                      } else {
+                      if (!isSelected) {
                         selectedMembers.add(member);
+                      } else {
+                        selectedMembers.remove(member);
+                        customAmounts[member] = 0;
+                        customAmountControllers[index]?.text = '0';
                       }
-                      _updateShare();
+                      _updateCustomAmount();
+                      _updateSplitAmount();
                     });
                   },
                   child: ListTile(
@@ -320,6 +333,16 @@ class _AddExpenseState extends State<AddExpense> {
                                 width: 80,
                                 height: 30,
                                 child: TextField(
+                                  controller: customAmountControllers[index],
+                                  onTap: () => customAmountControllers[index]
+                                          ?.selection =
+                                      TextSelection(
+                                          baseOffset: 0,
+                                          extentOffset:
+                                              customAmountControllers[index]!
+                                                  .value
+                                                  .text
+                                                  .length),
                                   enabled: isSelected,
                                   enableInteractiveSelection: false,
                                   keyboardType: TextInputType.number,
@@ -327,16 +350,16 @@ class _AddExpenseState extends State<AddExpense> {
                                     double val = double.tryParse(value) ?? 0.0;
                                     setState(() {
                                       customAmounts[member] = val;
-                                      _updateTotalAmount();
+                                      _updateCustomAmount();
                                     });
                                   },
                                 ),
                               )
                             : Text(
                                 isSelected
-                                    ? '\$${sharePerMember.toStringAsFixed(2)}'
+                                    ? '\$${splitAmounts.toStringAsFixed(2)}'
                                     : '\$0.00',
-                                style: GoogleFonts.poppins()),
+                              ),
                         CupertinoCheckbox(
                           value: isSelected,
                           activeColor: const Color(0xff10416d),
@@ -348,9 +371,11 @@ class _AddExpenseState extends State<AddExpense> {
                                 selectedMembers.add(member);
                               } else {
                                 selectedMembers.remove(member);
+                                customAmounts[member] = 0;
+                                customAmountControllers[index]?.text = '0';
                               }
-                              // Recalculate the share whenever a member is selected or deselected
-                              _updateShare();
+                              _updateCustomAmount();
+                              _updateSplitAmount();
                             });
                           },
                         ),
@@ -366,12 +391,54 @@ class _AddExpenseState extends State<AddExpense> {
     );
   }
 
-  void _updateTotalAmount() {
-    double total =
-        customAmounts.values.fold(0.0, (sum, element) => sum + element);
-    setState(() {
-      amountController.text = total.toStringAsFixed(2);
-    });
+  void _updateCustomAmount() {
+    if (isCustomSplit) {
+      double total =
+          customAmounts.values.fold(0.0, (sum, element) => sum + element);
+      setState(() {
+        amountController.text = total.toStringAsFixed(2);
+      });
+    }
+  }
+
+  Future<void> _saveExpense() async {
+    String title = titleController.text;
+    double amount = double.tryParse(amountController.text) ?? 0.0;
+    String date = dateController.text;
+    Map<String, double> debtors = {};
+
+    // Prepare the debtors map
+    if (isCustomSplit) {
+      debtors = customAmounts;
+    } else {
+      selectedMembers.forEach((member) {
+        debtors[member] = splitAmounts;
+      });
+    }
+
+    // Create a map of data to send
+    Map<String, dynamic> expenseData = {
+      'title': title,
+      'amount': amount,
+      'date': date,
+      'paidBy': selectedPaidBy,
+      'debtors': debtors,
+    };
+
+    try {
+      // Sending data to Firestore, to a subcollection within 'groups'
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .collection('expenses')
+          .add(expenseData);
+
+      // Show a success message or navigate away
+      print('Expense added successfully');
+    } catch (e) {
+      // Handle any errors here
+      print('Error adding expense: $e');
+    }
   }
 
   BoxDecoration textFieldDecoration() {

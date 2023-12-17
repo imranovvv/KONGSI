@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class Expenses extends StatefulWidget {
-  const Expenses({super.key});
+  final String groupId;
+
+  const Expenses({Key? key, required this.groupId}) : super(key: key);
 
   @override
   State<Expenses> createState() => _Expenses();
