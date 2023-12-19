@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:kongsi/components/appbar.dart';
 import 'dart:async';
 
@@ -75,7 +76,6 @@ class _AddExpenseState extends State<AddExpense> {
               selectedMembers = Set.from(members);
               for (double i = 0; i < members.length; i++) {
                 customAmountControllers[i] = TextEditingController(text: '0');
-                ;
               }
             });
             membersStreamController.add(members);
@@ -404,7 +404,7 @@ class _AddExpenseState extends State<AddExpense> {
   Future<void> _saveExpense() async {
     String title = titleController.text;
     double amount = double.tryParse(amountController.text) ?? 0.0;
-    String date = dateController.text;
+    String date = formatDateForFirestore(selectedDate);
     Map<String, double> debtors = {};
 
     // Prepare the debtors map
@@ -452,6 +452,10 @@ class _AddExpenseState extends State<AddExpense> {
   }
 
   String formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  String formatDateForFirestore(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
   }
 }
