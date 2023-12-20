@@ -18,12 +18,13 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final TextEditingController searchController = TextEditingController();
   String? searchQuery;
-  final Stream<Map<String, dynamic>> _stream = _getUserGroupsMapStream();
+  late Stream<Map<String, dynamic>> _stream;
   bool isSelected = true;
 
   @override
   void initState() {
     super.initState();
+    _stream = _getUserGroupsMapStream();
     searchController.addListener(_onSearchChanged);
   }
 
@@ -93,10 +94,9 @@ class _HomeState extends State<Home> {
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
-          var groupsMap =
-              snapshot.data?['groups'] as Map<String, dynamic>? ?? {};
+          var groupsMap = snapshot.data!['groups'] as Map<String, dynamic>;
           var groupNames = groupsMap.keys.toList();
-          var groupIds = groupsMap.values.cast<String>().toList();
+          var groupIds = groupsMap.values.map((e) => e['id']).toList();
 
           if (searchQuery != null && searchQuery!.isNotEmpty) {
             groupNames = groupNames
@@ -184,8 +184,23 @@ class _HomeState extends State<Home> {
 
     var userDocument =
         FirebaseFirestore.instance.collection('users').doc(user.uid);
-    return userDocument.snapshots().map((snapshot) => {
-          'groups': Map<String, dynamic>.from(snapshot.data()?['groups'] ?? {})
-        });
+    return userDocument.snapshots().map((snapshot) {
+      var data = snapshot.data();
+      if (data == null) return {'groups': {}};
+
+      var groupsMap = Map<String, dynamic>.from(data['groups'] ?? {});
+
+      // Sorting the groups based on 'createdAt' field
+      var sortedGroups = groupsMap.entries.toList()
+        ..sort((b, a) => (a.value['createdAt'] as Timestamp)
+            .compareTo(b.value['createdAt'] as Timestamp));
+
+      // Convert sorted list back to map
+      Map<String, dynamic> orderedGroups = {
+        for (var entry in sortedGroups) entry.key: entry.value
+      };
+
+      return {'groups': orderedGroups};
+    });
   }
 }

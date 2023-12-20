@@ -47,16 +47,17 @@ class _NewGroupState extends State<NewGroup> {
               ? FirebaseAuth.instance.currentUser?.uid ?? ''
               : ''
       };
-
-      String groupId = (await firestore.collection('groups').add({
+      var newGroupData = {
         'groupname': groupNameController.text,
         'description': descriptionController.text,
         'currency': selectedValueController.text,
         'members': membersMap,
-        'createdAt': FieldValue.serverTimestamp(),
-      }))
-          .id;
+      };
 
+      String groupId =
+          (await firestore.collection('groups').add(newGroupData)).id;
+
+      // Process each member
       await Future.forEach<String>(members, (memberName) async {
         var userSnapshot = await firestore
             .collection('users')
@@ -64,10 +65,17 @@ class _NewGroupState extends State<NewGroup> {
             .get();
         if (userSnapshot.docs.isNotEmpty) {
           var userId = userSnapshot.docs.first.id;
-          var currentGroups = userSnapshot.docs.first.get('groups');
-          await firestore.collection('users').doc(userId).update({
-            'groups': {...currentGroups, groupNameController.text: groupId},
-          });
+          var currentUserGroups = userSnapshot.docs.first.get('groups') ?? {};
+
+          currentUserGroups[groupNameController.text] = {
+            'id': groupId,
+            'createdAt': FieldValue.serverTimestamp(),
+          };
+
+          await firestore
+              .collection('users')
+              .doc(userId)
+              .update({'groups': currentUserGroups});
         }
       });
 
