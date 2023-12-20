@@ -17,12 +17,14 @@ class Expense {
   final double amount;
   final String paidBy;
   final DateTime date;
+  Map<String, double> debtors;
 
   Expense(
       {required this.title,
       required this.amount,
       required this.paidBy,
-      required this.date});
+      required this.date,
+      required this.debtors});
 }
 
 class _ExpensesState extends State<Expenses> {
@@ -50,7 +52,21 @@ class _ExpensesState extends State<Expenses> {
     return total;
   }
 
-  late Stream<List<Expense>> stream; // Declare the stream here
+  double calculateUserTotal(List<Expense> expenses, String userName) {
+    double totalAmountPaidByUser = 0;
+
+    for (var expense in expenses) {
+      if (expense.paidBy == userName) {
+        totalAmountPaidByUser += expense.amount;
+      } else {
+        totalAmountPaidByUser += expense.debtors[userName] ?? 0;
+      }
+    }
+
+    return totalAmountPaidByUser;
+  }
+
+  late Stream<List<Expense>> stream;
 
   @override
   Widget build(BuildContext context) {
@@ -159,14 +175,27 @@ class _ExpensesState extends State<Expenses> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(5.0),
                   ),
-                  child: const Column(
-                    children: [
-                      Text(
-                        "My Total:",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text("RM 500"),
-                    ],
+                  child: StreamBuilder<List<Expense>>(
+                    stream: getExpensesStream(widget.groupId),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Text("Calculating...");
+                      }
+
+                      String userName = "haha";
+                      double userTotal =
+                          calculateUserTotal(snapshot.data!, userName);
+
+                      return Column(
+                        children: [
+                          const Text(
+                            "My Total",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text("RM ${userTotal.toStringAsFixed(2)}"),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 Container(
@@ -212,14 +241,18 @@ Stream<List<Expense>> getExpensesStream(String groupId) {
       .collection('groups')
       .doc(groupId)
       .collection('expenses')
+      .orderBy('createdAt', descending: true)
       .snapshots()
       .map((snapshot) => snapshot.docs.map((doc) {
             var data = doc.data();
+            var debtorsMap = Map<String, double>.from(data['debtors'] ?? {});
+
             return Expense(
               title: data['title'],
               amount: data['amount'],
               paidBy: data['paidBy'],
               date: DateTime.parse(data['date']),
+              debtors: debtorsMap,
             );
           }).toList());
 }

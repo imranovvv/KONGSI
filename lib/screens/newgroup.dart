@@ -53,6 +53,7 @@ class _NewGroupState extends State<NewGroup> {
         'description': descriptionController.text,
         'currency': selectedValueController.text,
         'members': membersMap,
+        'createdAt': FieldValue.serverTimestamp(),
       }))
           .id;
 

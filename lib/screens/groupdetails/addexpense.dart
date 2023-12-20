@@ -423,6 +423,7 @@ class _AddExpenseState extends State<AddExpense> {
       'date': date,
       'paidBy': selectedPaidBy,
       'debtors': debtors,
+      'createdAt': FieldValue.serverTimestamp(), // Add this line for createdAt
     };
 
     try {
@@ -434,6 +435,8 @@ class _AddExpenseState extends State<AddExpense> {
           .add(expenseData);
 
       // Show a success message or navigate away
+      if (mounted) Navigator.of(context).pop();
+
       print('Expense added successfully');
     } catch (e) {
       // Handle any errors here
