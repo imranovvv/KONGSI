@@ -18,26 +18,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      routes: {
-        '/home': (context) => const Home(),
+    return GestureDetector(
+      onTap: () {
+        FocusScopeNode currentFocus = FocusScope.of(context);
+        if (!currentFocus.hasPrimaryFocus &&
+            currentFocus.focusedChild != null) {
+          FocusManager.instance.primaryFocus?.unfocus();
+        }
       },
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: const Color(0xFFE8EEF3),
+      child: MaterialApp(
+        routes: {
+          '/home': (context) => const Home(),
+        },
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSwatch().copyWith(
+            primary: const Color(0xFFE8EEF3),
+          ),
+          appBarTheme: const AppBarTheme(
+            foregroundColor: Colors.black,
+            elevation: 0,
+          ),
+          scaffoldBackgroundColor: const Color(0xFFE8EEF3),
+          textTheme: GoogleFonts.poppinsTextTheme(),
         ),
-        appBarTheme: const AppBarTheme(
-          foregroundColor: Colors.black,
-          elevation: 0,
+        debugShowCheckedModeBanner: false,
+        home: const Scaffold(
+          body: Auth(),
         ),
-        scaffoldBackgroundColor: const Color(0xFFE8EEF3),
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        // cupertinoOverrideTheme:
-        //     CupertinoThemeData(brightness: Brightness.light),
-      ),
-      debugShowCheckedModeBanner: false,
-      home: const Scaffold(
-        body: Auth(),
       ),
     );
   }

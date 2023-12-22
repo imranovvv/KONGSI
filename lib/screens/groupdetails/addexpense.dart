@@ -180,7 +180,7 @@ class _AddExpenseState extends State<AddExpense> {
             ),
             Padding(
               padding: const EdgeInsets.only(
-                  left: 30, right: 30, top: 20, bottom: 20),
+                  left: 30, right: 30, top: 0, bottom: 20),
               child: SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.05,

@@ -15,6 +15,21 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
+class Expense {
+  final String title;
+  final double amount;
+  final String paidBy;
+  final DateTime date;
+  Map<String, double> debtors;
+
+  Expense(
+      {required this.title,
+      required this.amount,
+      required this.paidBy,
+      required this.date,
+      required this.debtors});
+}
+
 class _HomeState extends State<Home> {
   final TextEditingController searchController = TextEditingController();
   String? searchQuery;
@@ -124,27 +139,49 @@ class _HomeState extends State<Home> {
 
   Widget _buildGroupTile(String groupName, String groupId, int index) {
     Color tileColor = index.isOdd ? const Color(0xffECECEC) : Colors.white;
-    return GestureDetector(
-      onTap: () => Navigator.push(
-          context,
-          CupertinoPageRoute(
-              builder: (context) =>
-                  GroupDetailPage(groupName: groupName, groupId: groupId))),
-      child: Card(
-        child: ListTile(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          tileColor: tileColor,
-          title: Text(groupName),
-          trailing: const Wrap(
-            spacing: 12,
-            children: [
-              Text('RM150',
-                  style: TextStyle(fontSize: 16, color: Colors.green)),
-              Icon(CupertinoIcons.forward),
-            ],
-          ),
-        ),
-      ),
+    Stream<double> balanceStream = calculateBalance(groupId, 'haha');
+
+    return StreamBuilder<double>(
+      stream: balanceStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else if (!snapshot.hasData) {
+          return const Text('Loading...');
+        } else {
+          double balance = snapshot.data!;
+          String balanceText = balance >= 0
+              ? 'RM${balance.toStringAsFixed(2)}'
+              : '-RM${(-balance).toStringAsFixed(2)}';
+          Color balanceColor = balance >= 0 ? Colors.green : Colors.red;
+
+          return GestureDetector(
+            onTap: () => Navigator.push(
+                context,
+                CupertinoPageRoute(
+                    builder: (context) => GroupDetailPage(
+                        groupName: groupName, groupId: groupId))),
+            child: Card(
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
+                tileColor: tileColor,
+                title: Text(groupName),
+                trailing: Wrap(
+                  spacing: 12,
+                  children: [
+                    Text(balanceText,
+                        style: TextStyle(fontSize: 16, color: balanceColor)),
+                    Icon(CupertinoIcons.forward),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -190,17 +227,45 @@ class _HomeState extends State<Home> {
 
       var groupsMap = Map<String, dynamic>.from(data['groups'] ?? {});
 
-      // Sorting the groups based on 'createdAt' field
       var sortedGroups = groupsMap.entries.toList()
         ..sort((b, a) => (a.value['createdAt'] as Timestamp)
             .compareTo(b.value['createdAt'] as Timestamp));
 
-      // Convert sorted list back to map
       Map<String, dynamic> orderedGroups = {
         for (var entry in sortedGroups) entry.key: entry.value
       };
 
       return {'groups': orderedGroups};
+    });
+  }
+
+  Stream<double> calculateBalance(String groupId, String userId) {
+    var expensesCollection = FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .collection('expenses');
+
+    return expensesCollection.snapshots().map((snapshot) {
+      double balance = 0;
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        Expense expense = Expense(
+          title: data['title'],
+          amount: data['amount'],
+          paidBy: data['paidBy'],
+          date: DateTime.parse(data['date']),
+          debtors: Map<String, double>.from(data['debtors']),
+        );
+
+        if (expense.paidBy == userId) {
+          balance += expense.amount;
+        }
+
+        balance -= (expense.debtors[userId] ?? 0);
+      }
+
+      return balance;
     });
   }
 }
