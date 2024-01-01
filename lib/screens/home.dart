@@ -35,10 +35,26 @@ class _HomeState extends State<Home> {
   String? searchQuery;
   late Stream<Map<String, dynamic>> _stream;
   bool isSelected = true;
+  String? userName;
+  Future<void> getUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      setState(() {
+        userName = userSnapshot['name'];
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    getUserData();
     _stream = _getUserGroupsMapStream();
     searchController.addListener(_onSearchChanged);
   }
@@ -139,7 +155,9 @@ class _HomeState extends State<Home> {
 
   Widget _buildGroupTile(String groupName, String groupId, int index) {
     Color tileColor = index.isOdd ? const Color(0xffECECEC) : Colors.white;
-    Stream<double> balanceStream = calculateBalance(groupId, 'haha');
+    Stream<double> balanceStream = userName != null
+        ? calculateBalance(groupId, userName!)
+        : Stream.value(0.0); // Provide a default value, or handle it as needed
 
     return StreamBuilder<double>(
       stream: balanceStream,
