@@ -42,6 +42,11 @@ class _ExpensesState extends State<Expenses> {
     expensesStream = getExpensesStream(widget.groupId);
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> getUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
