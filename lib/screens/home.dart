@@ -157,7 +157,7 @@ class _HomeState extends State<Home> {
     Color tileColor = index.isOdd ? const Color(0xffECECEC) : Colors.white;
     Stream<double> balanceStream = userName != null
         ? calculateBalance(groupId, userName!)
-        : Stream.value(0.0); // Provide a default value, or handle it as needed
+        : Stream.value(0.0);
 
     return StreamBuilder<double>(
       stream: balanceStream,

@@ -57,7 +57,6 @@ class _NewGroupState extends State<NewGroup> {
       String groupId =
           (await firestore.collection('groups').add(newGroupData)).id;
 
-      // Process each member
       await Future.forEach<String>(members, (memberName) async {
         var userSnapshot = await firestore
             .collection('users')

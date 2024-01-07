@@ -36,9 +36,7 @@ class _RegisterState extends State<Register> {
           password: passwordController.text,
         );
         addUser(nameController.text, emailController.text);
-      } else {
-        //show error
-      }
+      } else {}
       if (context.mounted) {
         Navigator.of(context).pop();
       }

@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final bool showLogoutButton; // Boolean parameter
+  final bool showLogoutButton;
 
   const CustomAppBar({super.key, required this.showLogoutButton});
 

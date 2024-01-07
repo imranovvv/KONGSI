@@ -16,7 +16,7 @@ class SelectMember extends StatefulWidget {
 
 class _SelectMemberState extends State<SelectMember> {
   late final List<String> members;
-  String groupName = ""; // Initialize groupName with an empty string
+  String groupName = "";
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -24,11 +24,10 @@ class _SelectMemberState extends State<SelectMember> {
   void initState() {
     super.initState();
     members = widget.members;
-    fetchGroupName(); // Call the function to fetch the group name
+    fetchGroupName();
     print(currentUser!.uid);
   }
 
-  // Function to fetch group name from Firestore
   void fetchGroupName() async {
     try {
       DocumentSnapshot groupSnapshot =

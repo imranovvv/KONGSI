@@ -54,7 +54,7 @@ class _AddExpenseState extends State<AddExpense> {
     amountController.removeListener(_updateSplitAmount);
     amountController.dispose();
     super.dispose();
-    membersStreamController.close(); // Close the stream controller
+    membersStreamController.close();
   }
 
   void fetchGroupMembers() async {
@@ -91,7 +91,6 @@ class _AddExpenseState extends State<AddExpense> {
     }
   }
 
-  // Show Cupertino picker for member selection
   void showMemberPicker() {
     int initialIndex = groupMembers.indexOf(selectedPaidBy);
     showCupertinoModalPopup(
@@ -112,7 +111,6 @@ class _AddExpenseState extends State<AddExpense> {
     );
   }
 
-  // Show Cupertino picker for date selection
   void showDatePicker() {
     showCupertinoModalPopup(
       context: context,
@@ -131,7 +129,6 @@ class _AddExpenseState extends State<AddExpense> {
     );
   }
 
-  // Builds the picker with a given child
   Widget buildPicker(Widget child) {
     return Container(
       height: 216,
@@ -201,7 +198,6 @@ class _AddExpenseState extends State<AddExpense> {
     );
   }
 
-  // Builds a text field for the form
   Widget buildTextField(TextEditingController controller, String placeholder,
       TextInputType keyboardType) {
     return CupertinoTextField(
@@ -214,7 +210,6 @@ class _AddExpenseState extends State<AddExpense> {
     );
   }
 
-  // Builds the date picker field
   Widget buildDatePickerField() {
     return buildPickerContainer(
       CupertinoTextField(
@@ -228,7 +223,6 @@ class _AddExpenseState extends State<AddExpense> {
     );
   }
 
-  // Builds the member picker field
   Widget buildPaidByField() {
     return buildPickerContainer(
       CupertinoTextField(
@@ -242,7 +236,6 @@ class _AddExpenseState extends State<AddExpense> {
     );
   }
 
-  // Builds a container for picker fields
   Widget buildPickerContainer(Widget child) {
     return Container(
       decoration: textFieldDecoration(),
@@ -250,7 +243,6 @@ class _AddExpenseState extends State<AddExpense> {
     );
   }
 
-  // Builds the members list with share of expense displayed next to checkboxes
   Widget buildMembersList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +399,6 @@ class _AddExpenseState extends State<AddExpense> {
     String date = formatDateForFirestore(selectedDate);
     Map<String, double> debtors = {};
 
-    // Prepare the debtors map
     if (isCustomSplit) {
       debtors = customAmounts;
     } else {
@@ -416,30 +407,26 @@ class _AddExpenseState extends State<AddExpense> {
       });
     }
 
-    // Create a map of data to send
     Map<String, dynamic> expenseData = {
       'title': title,
       'amount': amount,
       'date': date,
       'paidBy': selectedPaidBy,
       'debtors': debtors,
-      'createdAt': FieldValue.serverTimestamp(), // Add this line for createdAt
+      'createdAt': FieldValue.serverTimestamp(),
     };
 
     try {
-      // Sending data to Firestore, to a subcollection within 'groups'
       await FirebaseFirestore.instance
           .collection('groups')
           .doc(widget.groupId)
           .collection('expenses')
           .add(expenseData);
 
-      // Show a success message or navigate away
       if (mounted) Navigator.of(context).pop();
 
       print('Expense added successfully');
     } catch (e) {
-      // Handle any errors here
       print('Error adding expense: $e');
     }
   }

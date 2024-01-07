@@ -46,9 +46,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
             Navigator.push(
               context,
               CupertinoPageRoute(
-                builder: (context) => AddExpense(
-                    groupId: widget
-                        .groupId), // Replace with the actual name of your AddExpense page class
+                builder: (context) => AddExpense(groupId: widget.groupId),
               ),
             );
             print('FAB button pressed');
@@ -93,8 +91,8 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                         children: [
                           Text('Expenses'),
                           Icon(
-                            Icons.attach_money, // Add your icon here
-                            size: 20, // Adjust the size as needed
+                            Icons.attach_money,
+                            size: 20,
                           ),
                         ],
                       ),
@@ -107,8 +105,8 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                         children: [
                           Text('Balances'),
                           Icon(
-                            Icons.account_balance, // Add your icon here
-                            size: 20, // Adjust the size as needed
+                            Icons.account_balance,
+                            size: 20,
                           ),
                         ],
                       ),
@@ -121,8 +119,8 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                         children: [
                           Text('Transactions'),
                           Icon(
-                            Icons.swap_horiz, // Add your icon here
-                            size: 20, // Adjust the size as needed
+                            Icons.swap_horiz,
+                            size: 20,
                           ),
                         ],
                       ),

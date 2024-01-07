@@ -54,9 +54,7 @@ class _BalancesState extends State<Balances> {
         }
         calculateRangeValues();
       }
-    } catch (e) {
-      // Handle exceptions
-    }
+    } catch (e) {}
     setState(() {
       isLoading = false;
     });
@@ -68,7 +66,6 @@ class _BalancesState extends State<Balances> {
 
     for (var sliderData in slidersData) {
       if (total == 0 || sliderData.balance == 0) {
-        // Neutral position when total balance or individual balance is zero
         sliderData.rangeValues = RangeValues(0.5, 0.5);
       } else {
         double valuePart = sliderData.balance.abs() / total;
