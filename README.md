@@ -1,16 +1,16 @@
-# kongsi
+# KONGSI: Expense Sharing Made Easy
 
-A new Flutter project.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+## About Kongsi
 
-A few resources to get you started if this is your first Flutter project:
+Kongsi is a Flutter-based mobile application designed to simplify the process of sharing and managing expenses among friends, family, or colleagues. Whether you're planning a group trip, splitting household bills, or organizing a shared event, Kongsi makes it effortless to keep track of who owes what.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Features
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+* Expense Tracking: Easily add, view, and manage shared expenses.
+* Splitting Bills: Automatically calculate how expenses are split among group members.
+* Settle Debts: Keep track of who owes money to whom and record when debts are settled.
+* Group Management: Create and manage groups for different expense-sharing scenarios.
+* Notifications: Receive updates when new expenses are added or when debts are settled.
+* Multi-Currency Support: Convenient for international groups or travel.
