@@ -77,6 +77,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
               padding: const EdgeInsets.only(left: 16.0, right: 16.0),
               child: TabBar(
                 controller: _tabController,
+                labelPadding: EdgeInsets.zero,
                 indicator: BoxDecoration(
                   borderRadius: BorderRadius.circular(5.0),
                   color: const Color(0xffb2c3d1),

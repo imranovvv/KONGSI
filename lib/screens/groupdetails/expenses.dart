@@ -73,11 +73,7 @@ class _ExpensesState extends State<Expenses> {
 
   double calculateUserTotal(List<Expense> expenses, String userName) {
     return expenses.fold(0.0, (total, expense) {
-      if (expense.paidBy == userName) {
-        return total + expense.amount;
-      } else {
-        return total + (expense.debtors[userName] ?? 0.0);
-      }
+      return total + (expense.debtors[userName] ?? 0.0);
     });
   }
 

@@ -162,10 +162,10 @@ class _AddExpenseState extends State<AddExpense> {
                   ),
                   const SizedBox(height: 20.0),
                   buildTextField(
-                    amountController,
-                    'Amount',
-                    TextInputType.number,
-                  ),
+                      amountController,
+                      'Amount',
+                      const TextInputType.numberWithOptions(
+                          signed: true, decimal: true)),
                   const SizedBox(height: 20.0),
                   buildDatePickerField(),
                   const SizedBox(height: 20.0),
@@ -337,7 +337,9 @@ class _AddExpenseState extends State<AddExpense> {
                                                   .length),
                                   enabled: isSelected,
                                   enableInteractiveSelection: false,
-                                  keyboardType: TextInputType.number,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          signed: true, decimal: true),
                                   onChanged: (value) {
                                     double val = double.tryParse(value) ?? 0.0;
                                     setState(() {

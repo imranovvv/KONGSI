@@ -25,117 +25,71 @@ class Expense {
       required this.debtors});
 }
 
-class SliderData {
-  int balance;
-  late RangeValues rangeValues;
+class MemberBalance {
+  String name;
+  double balance;
+  RangeValues rangeValues;
 
-  SliderData({required this.balance});
+  MemberBalance(this.name, this.balance)
+      : rangeValues = const RangeValues(0.5, 0.5);
 }
 
 class _BalancesState extends State<Balances> {
-  List<SliderData> slidersData = [];
-  Map<String, dynamic>? members;
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchGroupMembersAndBalances();
   }
 
-  void fetchGroupMembersAndBalances() async {
-    try {
-      members = await fetchGroupMembers(widget.groupId);
-      if (members != null) {
-        for (var memberName in members!.keys) {
-          double balance =
-              await calculateBalance(widget.groupId, memberName).first;
-          slidersData.add(SliderData(balance: balance.toInt()));
-        }
-        calculateRangeValues();
-      }
-    } catch (e) {}
-    setState(() {
-      isLoading = false;
-    });
-  }
-
-  void calculateRangeValues() {
-    double total =
-        slidersData.fold(0, (sum, data) => sum + data.balance.abs()).toDouble();
-
-    for (var sliderData in slidersData) {
-      if (total == 0 || sliderData.balance == 0) {
-        sliderData.rangeValues = RangeValues(0.5, 0.5);
-      } else {
-        double valuePart = sliderData.balance.abs() / total;
-        if (sliderData.balance >= 0) {
-          sliderData.rangeValues = RangeValues(0.5, 0.5 + valuePart);
-        } else {
-          sliderData.rangeValues = RangeValues(0.5 - valuePart, 0.5);
-        }
-      }
-    }
-  }
-
-  SliderTheme _buildSliderWidget(SliderData data) {
-    Color activeTrackColor = data.balance > 0 ? Colors.green : Colors.red;
-
-    return SliderTheme(
-      data: SliderTheme.of(context).copyWith(
-        activeTrackColor: activeTrackColor,
-        inactiveTrackColor: Colors.grey,
-        thumbColor: Colors.black,
-        rangeThumbShape:
-            const RoundRangeSliderThumbShape(enabledThumbRadius: 4.0),
-        trackShape: const RectangularSliderTrackShape(),
-      ),
-      child: AbsorbPointer(
-        absorbing: true,
-        child: RangeSlider(
-          values: data.rangeValues,
-          onChanged: (values) => _onSliderChanged(values, data),
-          min: 0.0,
-          max: 1.0,
-        ),
-      ),
-    );
-  }
-
-  void _onSliderChanged(RangeValues values, SliderData data) {
-    setState(() {
-      data.rangeValues = values;
-    });
-  }
-
-  Stream<double> calculateBalance(String groupId, String userId) {
+  Stream<List<MemberBalance>> fetchMembersAndBalancesStream(
+      String groupId) async* {
+    var members = await fetchGroupMembers(groupId);
     var expensesCollection = FirebaseFirestore.instance
         .collection('groups')
         .doc(groupId)
         .collection('expenses');
 
-    return expensesCollection.snapshots().map((snapshot) {
-      double balance = 0;
+    await for (var snapshot in expensesCollection.snapshots()) {
+      List<MemberBalance> memberBalances = [];
+      double totalBalance = 0;
 
-      for (var doc in snapshot.docs) {
-        var data = doc.data();
-        Expense expense = Expense(
-          title: data['title'],
-          amount: data['amount'],
-          paidBy: data['paidBy'],
-          date: DateTime.parse(data['date']),
-          debtors: Map<String, double>.from(data['debtors']),
-        );
+      for (var memberName in members.keys) {
+        double balance = 0;
+        for (var doc in snapshot.docs) {
+          var data = doc.data();
+          Expense expense = Expense(
+            title: data['title'],
+            amount: data['amount'],
+            paidBy: data['paidBy'],
+            date: DateTime.parse(data['date']),
+            debtors: Map<String, double>.from(data['debtors']),
+          );
 
-        if (expense.paidBy == userId) {
-          balance += expense.amount;
+          if (expense.paidBy == memberName) {
+            balance += expense.amount;
+          }
+          balance -= (expense.debtors[memberName] ?? 0);
         }
-
-        balance -= (expense.debtors[userId] ?? 0);
+        totalBalance += balance.abs();
+        memberBalances.add(MemberBalance(memberName, balance));
       }
 
-      return balance;
-    });
+      for (var memberBalance in memberBalances) {
+        if (totalBalance == 0) {
+          memberBalance.rangeValues = const RangeValues(0.5, 0.5);
+        } else {
+          double valuePart = (memberBalance.balance.abs() / totalBalance);
+          if (memberBalance.balance >= 0) {
+            memberBalance.rangeValues = RangeValues(0.5, 0.5 + valuePart);
+          } else {
+            memberBalance.rangeValues = RangeValues(0.5 - valuePart, 0.5);
+          }
+        }
+      }
+
+      yield memberBalances;
+    }
   }
 
   Future<Map<String, dynamic>> fetchGroupMembers(String groupId) async {
@@ -156,70 +110,95 @@ class _BalancesState extends State<Balances> {
     return groupData['members'] as Map<String, dynamic>;
   }
 
+  SliderTheme _buildSliderWidget(MemberBalance data) {
+    Color activeTrackColor = data.balance > 0 ? Colors.green : Colors.red;
+
+    return SliderTheme(
+      data: SliderTheme.of(context).copyWith(
+          activeTrackColor: activeTrackColor,
+          inactiveTrackColor: Colors.grey,
+          thumbColor: Colors.black,
+          rangeThumbShape:
+              const RoundRangeSliderThumbShape(enabledThumbRadius: 4.0),
+          trackShape: const RectangularSliderTrackShape(),
+          overlayShape: SliderComponentShape.noThumb),
+      child: AbsorbPointer(
+        absorbing: true,
+        child: RangeSlider(
+          values: data.rangeValues,
+          onChanged: (values) => {},
+          min: 0.0,
+          max: 1.0,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
     return Scaffold(
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: fetchGroupMembers(widget.groupId),
-        builder: (context, membersSnapshot) {
-          if (membersSnapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          }
-          if (membersSnapshot.hasError) {
-            return Text('Error: ${membersSnapshot.error}');
-          }
+      body: Padding(
+        padding: const EdgeInsets.only(top: 16.0),
+        child: StreamBuilder<List<MemberBalance>>(
+          stream: fetchMembersAndBalancesStream(widget.groupId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            }
+            if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Text('No members found for this group');
+            }
 
-          final members = membersSnapshot.data;
+            var memberBalances = snapshot.data!;
 
-          if (members == null) {
-            return const Text('No members found for this group');
-          }
-
-          return ListView.builder(
-            itemCount: members.length,
-            itemBuilder: (context, index) {
-              final String memberName = members.keys.elementAt(index);
-
-              return StreamBuilder<double>(
-                stream: calculateBalance(widget.groupId, memberName),
-                builder: (context, balanceSnapshot) {
-                  if (balanceSnapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return ListTile(
-                      title: Text(memberName),
-                      subtitle: const Text('Calculating balance...'),
-                    );
-                  }
-
-                  if (balanceSnapshot.hasError) {
-                    return ListTile(
-                      title: Text(memberName),
-                      subtitle: Text('Error: ${balanceSnapshot.error}'),
-                    );
-                  }
-
-                  final double balance = balanceSnapshot.data ?? 0.0;
-                  return ListTile(
-                    title: Text(memberName),
-                    subtitle: Text('Balance: \$${balance.toStringAsFixed(2)}'),
-                    trailing: SizedBox(
-                      width: 200,
-                      child: _buildSliderWidget(slidersData[index]),
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        },
+            return ListView.builder(
+              itemCount: memberBalances.length,
+              itemBuilder: (context, index) {
+                final memberBalance = memberBalances[index];
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 20.0),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(memberBalance.name),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            Text(
+                              (memberBalance.balance < 0 ? '-\$' : '\$') +
+                                  memberBalance.balance
+                                      .abs()
+                                      .toStringAsFixed(2),
+                              style: TextStyle(
+                                color: memberBalance.balance < 0
+                                    ? Colors.red[800]
+                                    : Colors.green[800],
+                              ),
+                            ),
+                            _buildSliderWidget(memberBalance),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
