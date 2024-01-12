@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import 'package:kongsi/screens/groupdetails/addexpense.dart';
+
 import 'dart:math' as math;
 
 class Transactions extends StatefulWidget {
@@ -129,7 +132,7 @@ class TransactionsState extends State<Transactions> {
                           ),
                         ],
                       ),
-                      trailing: _buildReimburseButton(),
+                      trailing: _buildReimburseButton(transaction),
                     ),
                     const Divider(
                         color: Colors.grey, thickness: 1.0, height: 0.0),
@@ -190,14 +193,27 @@ class TransactionsState extends State<Transactions> {
     return simplifiedDebts;
   }
 
-  Widget _buildReimburseButton() {
+  Widget _buildReimburseButton(Transaction transaction) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.green[600],
         elevation: 0,
         padding: const EdgeInsets.all(4),
       ),
-      onPressed: () {},
+      onPressed: () {
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (context) => AddExpense(
+              groupId: widget.groupId,
+              title: 'Reimbursement',
+              paidBy: transaction.debtor,
+              debtor: transaction.creditor,
+              amount: transaction.amount,
+            ),
+          ),
+        );
+      },
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [

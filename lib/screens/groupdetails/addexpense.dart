@@ -8,8 +8,19 @@ import 'dart:async';
 
 class AddExpense extends StatefulWidget {
   final String groupId;
+  final String title;
+  final String paidBy;
+  final String debtor;
+  final double amount;
 
-  const AddExpense({Key? key, required this.groupId}) : super(key: key);
+  const AddExpense({
+    Key? key,
+    required this.groupId,
+    this.title = '',
+    this.paidBy = '',
+    this.debtor = '',
+    this.amount = 0,
+  }) : super(key: key);
 
   @override
   State<AddExpense> createState() => _AddExpenseState();
@@ -37,16 +48,24 @@ class _AddExpenseState extends State<AddExpense> {
     selectedDate = DateTime.now();
     dateController.text = formatDate(selectedDate);
     fetchGroupMembers();
+
+    if (widget.title.isNotEmpty) {
+      titleController.text = widget.title;
+    }
+    if (widget.amount != 0) {
+      amountController.text = widget.amount.toStringAsFixed(2);
+    }
+
     amountController.addListener(_updateSplitAmount);
   }
 
   void _updateSplitAmount() {
-    double amount = double.tryParse(amountController.text) ?? 0.0;
-    setState(() {
-      splitAmounts = (selectedMembers.isNotEmpty && amount > 0)
-          ? amount / selectedMembers.length
-          : 0.0;
-    });
+    if (selectedMembers.isNotEmpty) {
+      double amount = double.tryParse(amountController.text) ?? 0.0;
+      setState(() {
+        splitAmounts = amount > 0 ? amount / selectedMembers.length : 0.0;
+      });
+    }
   }
 
   @override
@@ -72,12 +91,19 @@ class _AddExpenseState extends State<AddExpense> {
           if (members.isNotEmpty) {
             setState(() {
               groupMembers = members;
-              selectedPaidBy = members.first;
-              selectedMembers = Set.from(members);
+              selectedPaidBy =
+                  widget.paidBy.isNotEmpty ? widget.paidBy : members.first;
+              selectedMembers =
+                  widget.debtor.isNotEmpty && members.contains(widget.debtor)
+                      ? {widget.debtor}
+                      : Set.from(members);
+
               for (double i = 0; i < members.length; i++) {
                 customAmountControllers[i] = TextEditingController(text: '0');
               }
             });
+            _updateSplitAmount();
+
             membersStreamController.add(members);
           }
         } else {
