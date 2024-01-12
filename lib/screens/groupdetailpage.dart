@@ -137,7 +137,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
               children: [
                 Expenses(groupId: widget.groupId),
                 Balances(groupId: widget.groupId),
-                const Transactions(),
+                Transactions(groupId: widget.groupId),
               ],
             ),
           ),

@@ -138,7 +138,7 @@ class _BalancesState extends State<Balances> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.only(top: 16.0),
+        padding: const EdgeInsets.all(16.0),
         child: StreamBuilder<List<MemberBalance>>(
           stream: fetchMembersAndBalancesStream(widget.groupId),
           builder: (context, snapshot) {
