@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class Expenses extends StatefulWidget {
@@ -34,17 +37,36 @@ class _ExpensesState extends State<Expenses> {
   TextEditingController searchController = TextEditingController();
   String? searchQuery;
   late Stream<List<Expense>> expensesStream;
+  String currencySymbol = '\$';
 
   @override
   void initState() {
     super.initState();
     getUserData();
     expensesStream = getExpensesStream(widget.groupId);
+    loadCurrencySymbol();
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Future<String> getCurrencyCode(String groupId) async {
+    var groupSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .get();
+    return groupSnapshot.data()?['currency'] ?? 'USD';
+  }
+
+  Future<void> loadCurrencySymbol() async {
+    String currencyCode = await getCurrencyCode(widget.groupId);
+    final jsonString = await rootBundle.loadString('assets/currency.json');
+    final jsonResponse = json.decode(jsonString) as Map<String, dynamic>;
+    setState(() {
+      currencySymbol = jsonResponse[currencyCode]['symbol_native'] ?? '\$';
+    });
   }
 
   Future<void> getUserData() async {
@@ -167,7 +189,7 @@ class _ExpensesState extends State<Expenses> {
       padding: const EdgeInsets.only(top: 8.0),
       child: Column(
         children: [
-          Text('\$${expense.amount.toStringAsFixed(2)}',
+          Text('$currencySymbol${expense.amount.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(expense.paidBy,
               style: const TextStyle(
@@ -231,7 +253,7 @@ class _ExpensesState extends State<Expenses> {
       child: Column(
         children: [
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text("RM ${amount.toStringAsFixed(2)}"),
+          Text("$currencySymbol${amount.toStringAsFixed(2)}"),
         ],
       ),
     );

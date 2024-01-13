@@ -34,6 +34,7 @@ class _AuthState extends State<Auth> {
           return const Scaffold(
             appBar: CustomAppBar(
               showLogoutButton: true,
+              showDoneButton: false,
             ),
             body: Home(),
           );
@@ -41,6 +42,7 @@ class _AuthState extends State<Auth> {
           return Scaffold(
             appBar: const CustomAppBar(
               showLogoutButton: false,
+              showDoneButton: false,
             ),
             body: showLoginPage
                 ? Login(

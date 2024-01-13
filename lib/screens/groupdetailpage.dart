@@ -54,7 +54,10 @@ class _GroupDetailPageState extends State<GroupDetailPage>
           child: const Icon(Icons.add),
         ),
       ),
-      appBar: const CustomAppBar(showLogoutButton: false),
+      appBar: const CustomAppBar(
+        showLogoutButton: false,
+        showDoneButton: false,
+      ),
       body: Column(
         children: [
           AppBar(

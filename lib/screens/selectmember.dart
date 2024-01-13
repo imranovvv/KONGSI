@@ -74,7 +74,10 @@ class _SelectMemberState extends State<SelectMember> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(showLogoutButton: false),
+      appBar: const CustomAppBar(
+        showLogoutButton: false,
+        showDoneButton: false,
+      ),
       body: Column(
         children: [
           AppBar(

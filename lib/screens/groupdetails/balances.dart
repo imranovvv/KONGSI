@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class Balances extends StatefulWidget {
   final String groupId;
@@ -40,6 +43,26 @@ class _BalancesState extends State<Balances> {
   @override
   void initState() {
     super.initState();
+    loadCurrencySymbol();
+  }
+
+  String currencySymbol = '\$';
+
+  Future<String> getCurrencyCode(String groupId) async {
+    var groupSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .get();
+    return groupSnapshot.data()?['currency'] ?? 'USD';
+  }
+
+  Future<void> loadCurrencySymbol() async {
+    String currencyCode = await getCurrencyCode(widget.groupId);
+    final jsonString = await rootBundle.loadString('assets/currency.json');
+    final jsonResponse = json.decode(jsonString) as Map<String, dynamic>;
+    setState(() {
+      currencySymbol = jsonResponse[currencyCode]['symbol_native'] ?? '\$';
+    });
   }
 
   Stream<List<MemberBalance>> fetchMembersAndBalancesStream(
@@ -178,7 +201,9 @@ class _BalancesState extends State<Balances> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
                             Text(
-                              (memberBalance.balance < 0 ? '-\$' : '\$') +
+                              (memberBalance.balance < 0
+                                      ? '-$currencySymbol'
+                                      : currencySymbol) +
                                   memberBalance.balance
                                       .abs()
                                       .toStringAsFixed(2),

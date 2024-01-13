@@ -32,6 +32,9 @@ class _AddExpenseState extends State<AddExpense> {
   final TextEditingController amountController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
 
+  String? titleError;
+  String? amountError;
+
   late List<String> groupMembers;
   String selectedPaidBy = '';
   StreamController<List<String>> membersStreamController =
@@ -158,8 +161,7 @@ class _AddExpenseState extends State<AddExpense> {
   Widget buildPicker(Widget child) {
     return Container(
       height: 216,
-      padding: const EdgeInsets.only(top: 6.0),
-      margin: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      margin: const EdgeInsets.only(bottom: 0),
       color: CupertinoColors.systemBackground.resolveFrom(context),
       child: SafeArea(top: false, child: child),
     );
@@ -168,7 +170,10 @@ class _AddExpenseState extends State<AddExpense> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(showLogoutButton: false),
+      appBar: const CustomAppBar(
+        showLogoutButton: false,
+        showDoneButton: false,
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -184,17 +189,30 @@ class _AddExpenseState extends State<AddExpense> {
                   buildTextField(
                     titleController,
                     'Title',
+                    titleError,
                     TextInputType.text,
                   ),
                   const SizedBox(height: 20.0),
                   buildTextField(
                       amountController,
                       'Amount',
+                      amountError,
                       const TextInputType.numberWithOptions(
                           signed: true, decimal: true)),
                   const SizedBox(height: 20.0),
                   buildDatePickerField(),
                   const SizedBox(height: 20.0),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Paid By',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.black,
+                          )),
+                    ),
+                  ),
                   buildPaidByField(),
                   const SizedBox(height: 20.0),
                   buildMembersList(),
@@ -225,14 +243,25 @@ class _AddExpenseState extends State<AddExpense> {
   }
 
   Widget buildTextField(TextEditingController controller, String placeholder,
-      TextInputType keyboardType) {
-    return CupertinoTextField(
-      decoration: textFieldDecoration(),
-      placeholder: placeholder,
-      controller: controller,
-      keyboardType: keyboardType,
-      style: GoogleFonts.poppins(),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      String? errorMessage, TextInputType keyboardType) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CupertinoTextField(
+          decoration: textFieldDecoration(),
+          placeholder: placeholder,
+          controller: controller,
+          keyboardType: keyboardType,
+          style: GoogleFonts.poppins(),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        ),
+        if (errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 16, top: 8),
+            child: Text(errorMessage,
+                style: const TextStyle(color: Colors.red, fontSize: 12)),
+          ),
+      ],
     );
   }
 
@@ -422,6 +451,14 @@ class _AddExpenseState extends State<AddExpense> {
   }
 
   Future<void> _saveExpense() async {
+    setState(() {
+      titleError = titleController.text.isEmpty ? 'Title is required' : null;
+      amountError = amountController.text.isEmpty ? 'Amount is required' : null;
+    });
+
+    if (titleError != null || amountError != null) {
+      return;
+    }
     String title = titleController.text;
     double amount = double.tryParse(amountController.text) ?? 0.0;
     String date = formatDateForFirestore(selectedDate);

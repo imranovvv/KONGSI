@@ -66,7 +66,10 @@ class _JoinGroupState extends State<JoinGroup> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: const CustomAppBar(showLogoutButton: false),
+      appBar: const CustomAppBar(
+        showLogoutButton: false,
+        showDoneButton: false,
+      ),
       body: Stack(
         children: [
           AppBar(

@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showLogoutButton;
+  final bool showDoneButton;
 
-  const CustomAppBar({super.key, required this.showLogoutButton});
+  const CustomAppBar(
+      {super.key,
+      required this.showLogoutButton,
+      required this.showDoneButton});
 
   @override
   Size get preferredSize => const Size.fromHeight(100);
@@ -35,28 +39,39 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         if (showLogoutButton)
-          PopupMenuButton(
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 0,
-                  child: Text('Logout'),
-                ),
-                const PopupMenuItem(
-                  value: 1,
-                  child: Text('Item 2'),
-                ),
-                const PopupMenuItem(
-                  value: 2,
-                  child: Text('Item 3'),
-                ),
-              ];
+          // PopupMenuButton(
+          //   itemBuilder: (BuildContext context) {
+          //     return [
+          //       const PopupMenuItem(
+          //         value: 0,
+          //         child: Text('Logout'),
+          //       ),
+          //     ];
+          //   },
+          //   onSelected: (value) {
+          //     if (value == 0) {
+          //       signOut();
+          //     }
+          //   },
+          // ),
+          IconButton(
+            icon: const Icon(
+                Icons.logout_outlined), // Replace with your desired logout icon
+            onPressed: () {
+              signOut();
             },
-            onSelected: (value) {
-              if (value == 0) {
-                signOut();
-              }
+          ),
+        if (showDoneButton)
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
             },
+            child: const Text(
+              'Done',
+              style: TextStyle(
+                color: Colors.black,
+              ),
+            ),
           ),
       ],
     );

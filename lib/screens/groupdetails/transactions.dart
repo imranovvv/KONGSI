@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:kongsi/screens/groupdetails/addexpense.dart';
 
@@ -19,6 +22,26 @@ class TransactionsState extends State<Transactions> {
   @override
   void initState() {
     super.initState();
+    loadCurrencySymbol();
+  }
+
+  String currencySymbol = '\$';
+
+  Future<String> getCurrencyCode(String groupId) async {
+    var groupSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .get();
+    return groupSnapshot.data()?['currency'] ?? 'USD';
+  }
+
+  Future<void> loadCurrencySymbol() async {
+    String currencyCode = await getCurrencyCode(widget.groupId);
+    final jsonString = await rootBundle.loadString('assets/currency.json');
+    final jsonResponse = json.decode(jsonString) as Map<String, dynamic>;
+    setState(() {
+      currencySymbol = jsonResponse[currencyCode]['symbol_native'] ?? '\$';
+    });
   }
 
   Stream<List<Transaction>> fetchTransactionsStream() {
@@ -101,7 +124,7 @@ class TransactionsState extends State<Transactions> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'RM${transaction.amount.toStringAsFixed(2)}',
+                                  '$currencySymbol${transaction.amount.toStringAsFixed(2)}',
                                   style:
                                       const TextStyle(color: Color(0xff10416d)),
                                 ),
