@@ -32,13 +32,21 @@ class Expense {
   });
 }
 
+enum SortOption {
+  title,
+  amount,
+  date,
+  paidBy,
+}
+
 class _ExpensesState extends State<Expenses> {
   String? userName;
   TextEditingController searchController = TextEditingController();
   String? searchQuery;
   late Stream<List<Expense>> expensesStream;
   String currencySymbol = '\$';
-
+  SortOption currentSortOption = SortOption.date;
+  bool isDescending = false;
   @override
   void initState() {
     super.initState();
@@ -50,6 +58,83 @@ class _ExpensesState extends State<Expenses> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  List<Expense> sortExpenses(
+      List<Expense> expenses, SortOption sortOption, bool ascending) {
+    Comparator<Expense> comparator;
+    switch (sortOption) {
+      case SortOption.title:
+        comparator = (a, b) => a.title.compareTo(b.title);
+        break;
+      case SortOption.amount:
+        comparator = (a, b) => a.amount.compareTo(b.amount);
+        break;
+      case SortOption.date:
+        comparator = (a, b) => a.date.compareTo(b.date);
+        break;
+      case SortOption.paidBy:
+        comparator = (a, b) => a.paidBy.compareTo(b.paidBy);
+        break;
+      default:
+        comparator = (a, b) =>
+            a.date.compareTo(b.date); // Default sorting if none matches
+    }
+    expenses.sort(comparator);
+    if (!ascending) {
+      expenses = expenses.reversed.toList();
+    }
+    return expenses;
+  }
+
+  void showSortMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return ListView(
+          children: SortOption.values.map((option) {
+            return ListTile(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(describeSortOption(option)),
+                  if (currentSortOption == option)
+                    Icon(isDescending
+                        ? Icons.arrow_downward
+                        : Icons.arrow_upward),
+                ],
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  if (currentSortOption == option) {
+                    isDescending = !isDescending;
+                  } else {
+                    currentSortOption = option;
+                    isDescending = true;
+                  }
+                });
+              },
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  String describeSortOption(SortOption option) {
+    switch (option) {
+      case SortOption.title:
+        return 'Title';
+      case SortOption.amount:
+        return 'Amount';
+      case SortOption.date:
+        return 'Date';
+      case SortOption.paidBy:
+        return 'Paid By';
+      default:
+        return 'Unknown';
+    }
   }
 
   Future<String> getCurrencyCode(String groupId) async {
@@ -127,7 +212,7 @@ class _ExpensesState extends State<Expenses> {
         ),
         IconButton(
           icon: const Icon(Icons.tune),
-          onPressed: () => print('Tune button pressed'),
+          onPressed: () => showSortMenu(context),
         ),
       ],
     );
@@ -149,6 +234,9 @@ class _ExpensesState extends State<Expenses> {
           }
 
           var expenses = filterExpenses(snapshot.data!);
+          expenses = sortExpenses(
+              expenses, currentSortOption, isDescending); // Updated
+
           return ListView.builder(
             itemCount: expenses.length,
             itemBuilder: (context, index) => buildExpenseTile(expenses[index]),
