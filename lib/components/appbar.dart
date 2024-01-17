@@ -55,8 +55,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           //   },
           // ),
           IconButton(
-            icon: const Icon(
-                Icons.logout_outlined), // Replace with your desired logout icon
+            icon: const Icon(Icons.logout_outlined),
             onPressed: () {
               signOut();
             },

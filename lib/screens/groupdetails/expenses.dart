@@ -1,11 +1,12 @@
 import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:kongsi/screens/groupdetails/expensedetail.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 class Expenses extends StatefulWidget {
   final String groupId;
@@ -17,18 +18,22 @@ class Expenses extends StatefulWidget {
 }
 
 class Expense {
+  final String expenseId;
   final String title;
   final double amount;
   final String paidBy;
   final DateTime date;
   final Map<String, double> debtors;
+  final DateTime createdAt; // Add this field
 
   Expense({
+    required this.expenseId,
     required this.title,
     required this.amount,
     required this.paidBy,
     required this.date,
     required this.debtors,
+    required this.createdAt, // Initialize this field
   });
 }
 
@@ -44,9 +49,10 @@ class _ExpensesState extends State<Expenses> {
   TextEditingController searchController = TextEditingController();
   String? searchQuery;
   late Stream<List<Expense>> expensesStream;
-  String currencySymbol = '\$';
+  String currencySymbol = '';
   SortOption currentSortOption = SortOption.date;
   bool isDescending = false;
+
   @override
   void initState() {
     super.initState();
@@ -61,65 +67,30 @@ class _ExpensesState extends State<Expenses> {
   }
 
   List<Expense> sortExpenses(
-      List<Expense> expenses, SortOption sortOption, bool ascending) {
+      List<Expense> expenses, SortOption sortOption, bool descending) {
     Comparator<Expense> comparator;
     switch (sortOption) {
       case SortOption.title:
-        comparator = (a, b) => a.title.compareTo(b.title);
+        comparator =
+            (b, a) => a.title.toUpperCase().compareTo(b.title.toUpperCase());
         break;
+
       case SortOption.amount:
         comparator = (a, b) => a.amount.compareTo(b.amount);
         break;
       case SortOption.date:
-        comparator = (a, b) => a.date.compareTo(b.date);
+        comparator = (a, b) => a.createdAt.compareTo(b.createdAt);
         break;
+
       case SortOption.paidBy:
-        comparator = (a, b) => a.paidBy.compareTo(b.paidBy);
+        comparator = (b, a) => a.paidBy.compareTo(b.paidBy);
         break;
-      default:
-        comparator = (a, b) =>
-            a.date.compareTo(b.date); // Default sorting if none matches
     }
     expenses.sort(comparator);
-    if (!ascending) {
+    if (!descending) {
       expenses = expenses.reversed.toList();
     }
     return expenses;
-  }
-
-  void showSortMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return ListView(
-          children: SortOption.values.map((option) {
-            return ListTile(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(describeSortOption(option)),
-                  if (currentSortOption == option)
-                    Icon(isDescending
-                        ? Icons.arrow_downward
-                        : Icons.arrow_upward),
-                ],
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() {
-                  if (currentSortOption == option) {
-                    isDescending = !isDescending;
-                  } else {
-                    currentSortOption = option;
-                    isDescending = true;
-                  }
-                });
-              },
-            );
-          }).toList(),
-        );
-      },
-    );
   }
 
   String describeSortOption(SortOption option) {
@@ -142,7 +113,7 @@ class _ExpensesState extends State<Expenses> {
         .collection('groups')
         .doc(groupId)
         .get();
-    return groupSnapshot.data()?['currency'] ?? 'USD';
+    return groupSnapshot.data()?['currency'];
   }
 
   Future<void> loadCurrencySymbol() async {
@@ -150,7 +121,7 @@ class _ExpensesState extends State<Expenses> {
     final jsonString = await rootBundle.loadString('assets/currency.json');
     final jsonResponse = json.decode(jsonString) as Map<String, dynamic>;
     setState(() {
-      currencySymbol = jsonResponse[currencyCode]['symbol_native'] ?? '\$';
+      currencySymbol = jsonResponse[currencyCode]['symbol_native'];
     });
   }
 
@@ -175,12 +146,20 @@ class _ExpensesState extends State<Expenses> {
   }
 
   double calculateTotal(List<Expense> expenses) {
-    return expenses.fold(0.0, (total, expense) => total + expense.amount);
+    return expenses.fold(0.0, (total, expense) {
+      if (expense.title.toLowerCase() != 'reimbursement') {
+        return total + expense.amount;
+      }
+      return total;
+    });
   }
 
   double calculateUserTotal(List<Expense> expenses, String userName) {
     return expenses.fold(0.0, (total, expense) {
-      return total + (expense.debtors[userName] ?? 0.0);
+      if (expense.title.toLowerCase() != 'reimbursement') {
+        return total + (expense.debtors[userName] ?? 0.0);
+      }
+      return total;
     });
   }
 
@@ -210,9 +189,43 @@ class _ExpensesState extends State<Expenses> {
             decoration: const BoxDecoration(color: Colors.transparent),
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.tune),
-          onPressed: () => showSortMenu(context),
+        PopupMenuButton<SortOption>(
+          icon: const Icon(Icons.sort),
+          onSelected: (SortOption option) {
+            setState(() {
+              if (currentSortOption == option) {
+                isDescending = !isDescending;
+              } else {
+                currentSortOption = option;
+                isDescending = false;
+              }
+            });
+          },
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(8.0),
+              bottomRight: Radius.circular(8.0),
+              topLeft: Radius.circular(8.0),
+              topRight: Radius.circular(8.0),
+            ),
+          ),
+          itemBuilder: (BuildContext context) =>
+              SortOption.values.map((option) {
+            return PopupMenuItem<SortOption>(
+              value: option,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(describeSortOption(option)),
+                  if (currentSortOption == option)
+                    Icon(
+                      isDescending ? Icons.arrow_downward : Icons.arrow_upward,
+                      size: 20.0,
+                    ),
+                ],
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -230,16 +243,20 @@ class _ExpensesState extends State<Expenses> {
             return Text('Error: ${snapshot.error}');
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Text('No expenses found');
+            return const Center(
+              child: Text(
+                "You don't have any expenses yet. Click the \"+\" button to add them.",
+                textAlign: TextAlign.center,
+              ),
+            );
           }
-
           var expenses = filterExpenses(snapshot.data!);
-          expenses = sortExpenses(
-              expenses, currentSortOption, isDescending); // Updated
+          expenses = sortExpenses(expenses, currentSortOption, isDescending);
 
           return ListView.builder(
             itemCount: expenses.length,
-            itemBuilder: (context, index) => buildExpenseTile(expenses[index]),
+            itemBuilder: (context, index) =>
+                buildExpenseTile(expenses[index], expenses[index].expenseId),
           );
         },
       ),
@@ -256,30 +273,66 @@ class _ExpensesState extends State<Expenses> {
     return expenses;
   }
 
-  Widget buildExpenseTile(Expense expense) {
-    return Column(
-      children: [
-        ListTile(
-          title: Text(expense.title,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(DateFormat('dd/MM/yyyy').format(expense.date),
-              style: const TextStyle(
-                  fontStyle: FontStyle.italic, color: Color(0xFF10416D))),
-          trailing: buildExpenseAmountDisplay(expense),
-        ),
-        const Divider(color: Colors.grey, thickness: 1.0, height: 0.0),
-      ],
+  Widget buildExpenseTile(Expense expense, String documentId) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+              builder: (context) => ExpenseDetail(expense, currencySymbol)),
+        );
+      },
+      child: Column(
+        children: [
+          Slidable(
+            endActionPane: ActionPane(
+              motion: const ScrollMotion(),
+              children: [
+                SlidableAction(
+                  onPressed: ((context) {
+                    deleteExpense(widget.groupId, documentId);
+                  }),
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  icon: Icons.delete,
+                  label: 'Delete',
+                ),
+              ],
+            ),
+            child: ListTile(
+              title: Text(expense.title,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(DateFormat('dd/MM/yyyy').format(expense.date),
+                  style: const TextStyle(
+                      fontStyle: FontStyle.italic, color: Color(0xFF10416D))),
+              trailing: buildExpenseAmountDisplay(expense),
+            ),
+          ),
+          const Divider(color: Colors.grey, thickness: 1.0, height: 0.0),
+        ],
+      ),
     );
   }
 
+  Future<void> deleteExpense(String groupId, String documentId) async {
+    await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .collection('expenses')
+        .doc(documentId)
+        .delete();
+  }
+
   Widget buildExpenseAmountDisplay(Expense expense) {
+    String paidByDisplay =
+        expense.paidBy == userName ? "${expense.paidBy} (me)" : expense.paidBy;
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),
       child: Column(
         children: [
           Text('$currencySymbol${expense.amount.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(expense.paidBy,
+          Text(paidByDisplay,
               style: const TextStyle(
                   fontStyle: FontStyle.italic, color: Color(0xFF10416D))),
         ],
@@ -358,11 +411,13 @@ Stream<List<Expense>> getExpensesStream(String groupId) {
       .map((snapshot) => snapshot.docs.map((doc) {
             var data = doc.data();
             return Expense(
+              expenseId: doc.id,
               title: data['title'],
               amount: data['amount'],
               paidBy: data['paidBy'],
               date: DateTime.parse(data['date']),
               debtors: Map<String, double>.from(data['debtors'] ?? {}),
+              createdAt: data['createdAt'].toDate(), // Parse createdAt field
             );
           }).toList());
 }

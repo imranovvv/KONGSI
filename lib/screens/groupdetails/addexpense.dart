@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,6 +13,7 @@ class AddExpense extends StatefulWidget {
   final String paidBy;
   final String debtor;
   final double amount;
+  final bool isReimbursement;
 
   const AddExpense({
     Key? key,
@@ -20,6 +22,7 @@ class AddExpense extends StatefulWidget {
     this.paidBy = '',
     this.debtor = '',
     this.amount = 0,
+    this.isReimbursement = false,
   }) : super(key: key);
 
   @override
@@ -34,7 +37,9 @@ class _AddExpenseState extends State<AddExpense> {
 
   String? titleError;
   String? amountError;
+  String? numericError;
 
+  String? userName;
   late List<String> groupMembers;
   String selectedPaidBy = '';
   StreamController<List<String>> membersStreamController =
@@ -50,7 +55,7 @@ class _AddExpenseState extends State<AddExpense> {
     super.initState();
     selectedDate = DateTime.now();
     dateController.text = formatDate(selectedDate);
-    fetchGroupMembers();
+    fetchUserDataAndGroupMembers();
 
     if (widget.title.isNotEmpty) {
       titleController.text = widget.title;
@@ -60,6 +65,18 @@ class _AddExpenseState extends State<AddExpense> {
     }
 
     amountController.addListener(_updateSplitAmount);
+    amountController.addListener(_validateAmount);
+  }
+
+  void _validateAmount() {
+    String amountText = amountController.text;
+    double? amount = double.tryParse(amountText);
+    if (amount == null && amountText.isNotEmpty) {
+      setState(() => numericError = 'Enter numbers only');
+    } else {
+      setState(() => numericError = null);
+    }
+    _updateSplitAmount();
   }
 
   void _updateSplitAmount() {
@@ -79,44 +96,59 @@ class _AddExpenseState extends State<AddExpense> {
     membersStreamController.close();
   }
 
-  void fetchGroupMembers() async {
+  Future<void> fetchUserDataAndGroupMembers() async {
     try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .get();
+      User? user = FirebaseAuth.instance.currentUser;
 
-      if (snapshot.exists) {
-        Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
-        if (data != null && data.containsKey('members')) {
-          List<String> members =
-              Map<String, dynamic>.from(data['members']).keys.toList();
-          if (members.isNotEmpty) {
-            setState(() {
-              groupMembers = members;
-              selectedPaidBy =
-                  widget.paidBy.isNotEmpty ? widget.paidBy : members.first;
-              selectedMembers =
-                  widget.debtor.isNotEmpty && members.contains(widget.debtor)
-                      ? {widget.debtor}
-                      : Set.from(members);
+      if (user != null) {
+        var groupSnapshot = await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId)
+            .get();
 
-              for (double i = 0; i < members.length; i++) {
-                customAmountControllers[i] = TextEditingController(text: '0');
-              }
-            });
-            _updateSplitAmount();
+        var membersMap = groupSnapshot.data()?['members'];
+        if (membersMap != null) {
+          membersMap.forEach((name, uid) {
+            if (uid == user.uid) {
+              userName = name;
+            }
+          });
+        }
 
-            membersStreamController.add(members);
+        if (groupSnapshot.exists) {
+          Map<String, dynamic>? data = groupSnapshot.data();
+          if (data != null && data.containsKey('members')) {
+            List<String> members =
+                Map<String, dynamic>.from(data['members']).keys.toList();
+
+            if (members.isNotEmpty) {
+              setState(() {
+                groupMembers = members;
+                selectedPaidBy = (userName != null && members.contains(userName)
+                    ? userName
+                    : members.first)!;
+                selectedMembers =
+                    widget.debtor.isNotEmpty && members.contains(widget.debtor)
+                        ? {widget.debtor}
+                        : Set.from(members);
+
+                for (double i = 0; i < members.length; i++) {
+                  customAmountControllers[i] = TextEditingController(text: '0');
+                }
+              });
+              _updateSplitAmount();
+
+              membersStreamController.add(members);
+            }
+          } else {
+            print('No members found in group.');
           }
         } else {
-          print('No members found in group.');
+          print('Group not found.');
         }
-      } else {
-        print('Group not found.');
       }
     } catch (error) {
-      print('Error fetching group data: $error');
+      print('Error fetching data: $error');
     }
   }
 
@@ -149,6 +181,7 @@ class _AddExpenseState extends State<AddExpense> {
           mode: CupertinoDatePickerMode.date,
           showDayOfWeek: true,
           dateOrder: DatePickerDateOrder.dmy,
+          maximumDate: DateTime.now(),
           onDateTimeChanged: (newDate) => setState(() {
             selectedDate = newDate;
             dateController.text = formatDate(newDate);
@@ -255,10 +288,11 @@ class _AddExpenseState extends State<AddExpense> {
           style: GoogleFonts.poppins(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         ),
-        if (errorMessage != null)
+        if (errorMessage != null ||
+            (controller == amountController && numericError != null))
           Padding(
-            padding: const EdgeInsets.only(left: 16, top: 8),
-            child: Text(errorMessage,
+            padding: const EdgeInsets.only(left: 8, top: 8),
+            child: Text(errorMessage ?? numericError ?? '',
                 style: const TextStyle(color: Colors.red, fontSize: 12)),
           ),
       ],
@@ -283,7 +317,9 @@ class _AddExpenseState extends State<AddExpense> {
       CupertinoTextField(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         placeholder: 'Paid By',
-        controller: TextEditingController(text: selectedPaidBy),
+        controller: TextEditingController(
+          text: '$selectedPaidBy${selectedPaidBy == userName ? ' (me)' : ''}',
+        ),
         readOnly: true,
         style: GoogleFonts.poppins(),
         onTap: showMemberPicker,
@@ -307,7 +343,7 @@ class _AddExpenseState extends State<AddExpense> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Debtors',
+              Text('For whom',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.black,
@@ -317,7 +353,7 @@ class _AddExpenseState extends State<AddExpense> {
                 child: Text(
                   isCustomSplit ? 'Custom Split' : 'Equal Split',
                   style: GoogleFonts.poppins(
-                    color: Colors.black,
+                    color: Colors.blue[800],
                     fontSize: 12,
                   ),
                 ),
@@ -337,6 +373,26 @@ class _AddExpenseState extends State<AddExpense> {
             ],
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 10.0),
+          child: widget.isReimbursement
+              ? Text(
+                  '${widget.paidBy} is paying \$${widget.amount.toStringAsFixed(2)} to settle his debt with ${widget.debtor}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              : Text(
+                  'Tick members whom you are paying for',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
         StreamBuilder<List<String>>(
           stream: membersStreamController.stream,
           builder: (context, snapshot) {
@@ -354,24 +410,31 @@ class _AddExpenseState extends State<AddExpense> {
               itemBuilder: (context, index) {
                 String member = snapshot.data![index];
                 bool isSelected = selectedMembers.contains(member);
+                bool isCheckboxEnabled = !widget.isReimbursement ||
+                    member == widget.debtor; // Add this line
 
                 return InkWell(
-                  onTap: () {
-                    setState(() {
-                      if (!isSelected) {
-                        selectedMembers.add(member);
-                      } else {
-                        selectedMembers.remove(member);
-                        customAmounts[member] = 0;
-                        customAmountControllers[index]?.text = '0';
-                      }
-                      _updateCustomAmount();
-                      _updateSplitAmount();
-                    });
-                  },
+                  onTap: isCheckboxEnabled
+                      ? () {
+                          setState(() {
+                            if (!isSelected) {
+                              selectedMembers.add(member);
+                            } else {
+                              selectedMembers.remove(member);
+                              customAmounts[member] = 0;
+                              customAmountControllers[index]?.text = '0';
+                            }
+                            _updateCustomAmount();
+                            _updateSplitAmount();
+                          });
+                        }
+                      : null,
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                    title: Text(member, style: GoogleFonts.poppins()),
+                    title: Text(
+                      '$member${member == userName ? ' (me)' : ''}', // Updated line
+                      style: GoogleFonts.poppins(),
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -414,19 +477,23 @@ class _AddExpenseState extends State<AddExpense> {
                           activeColor: const Color(0xff10416d),
                           checkColor: Colors.white,
                           inactiveColor: const Color(0xff10416d),
-                          onChanged: (bool? value) {
-                            setState(() {
-                              if (value == true) {
-                                selectedMembers.add(member);
-                              } else {
-                                selectedMembers.remove(member);
-                                customAmounts[member] = 0;
-                                customAmountControllers[index]?.text = '0';
-                              }
-                              _updateCustomAmount();
-                              _updateSplitAmount();
-                            });
-                          },
+                          onChanged: isCheckboxEnabled
+                              ? (bool? value) {
+                                  // Update this line
+                                  setState(() {
+                                    if (value == true) {
+                                      selectedMembers.add(member);
+                                    } else {
+                                      selectedMembers.remove(member);
+                                      customAmounts[member] = 0;
+                                      customAmountControllers[index]?.text =
+                                          '0';
+                                    }
+                                    _updateCustomAmount();
+                                    _updateSplitAmount();
+                                  });
+                                }
+                              : null,
                         ),
                       ],
                     ),
@@ -454,6 +521,9 @@ class _AddExpenseState extends State<AddExpense> {
     setState(() {
       titleError = titleController.text.isEmpty ? 'Title is required' : null;
       amountError = amountController.text.isEmpty ? 'Amount is required' : null;
+      if (numericError != null) {
+        amountError = numericError;
+      }
     });
 
     if (titleError != null || amountError != null) {
@@ -467,9 +537,9 @@ class _AddExpenseState extends State<AddExpense> {
     if (isCustomSplit) {
       debtors = customAmounts;
     } else {
-      selectedMembers.forEach((member) {
+      for (var member in selectedMembers) {
         debtors[member] = splitAmounts;
-      });
+      }
     }
 
     Map<String, dynamic> expenseData = {

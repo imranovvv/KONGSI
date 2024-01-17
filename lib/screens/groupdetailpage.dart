@@ -49,7 +49,6 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                 builder: (context) => AddExpense(groupId: widget.groupId),
               ),
             );
-            print('FAB button pressed');
           },
           child: const Icon(Icons.add),
         ),

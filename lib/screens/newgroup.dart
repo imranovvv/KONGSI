@@ -45,7 +45,7 @@ class _NewGroupState extends State<NewGroup> {
     final jsonResponse = json.decode(jsonString) as Map<String, dynamic>;
     setState(() {
       currencyMap = jsonResponse
-          .map((key, value) => MapEntry(key, "${key} - ${value['name']}"));
+          .map((key, value) => MapEntry(key, "$key - ${value['name']}"));
     });
   }
 
@@ -145,7 +145,7 @@ class _NewGroupState extends State<NewGroup> {
         ),
         if (membersError != null)
           Padding(
-            padding: const EdgeInsets.only(left: 16, top: 8),
+            padding: const EdgeInsets.only(left: 16, top: 0),
             child: Text(membersError!,
                 style: const TextStyle(color: Colors.red, fontSize: 12)),
           ),
@@ -169,10 +169,13 @@ class _NewGroupState extends State<NewGroup> {
       contentPadding: const EdgeInsets.only(left: 20.0),
       title: TextField(
         controller: textController,
+        autofocus: false,
         decoration: const InputDecoration(hintText: 'Enter name'),
       ),
-      trailing: IconButton(
-        icon: const Icon(Icons.add),
+      trailing: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+        ),
         onPressed: () {
           if (textController.text.isNotEmpty) {
             setState(() {
@@ -181,6 +184,10 @@ class _NewGroupState extends State<NewGroup> {
             });
           }
         },
+        child: const Text(
+          'Add',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }
@@ -247,7 +254,7 @@ class _NewGroupState extends State<NewGroup> {
         ),
         if (errorMessage != null)
           Padding(
-            padding: const EdgeInsets.only(left: 16, top: 8),
+            padding: const EdgeInsets.only(left: 8, top: 8),
             child: Text(errorMessage,
                 style: const TextStyle(color: Colors.red, fontSize: 12)),
           ),
@@ -287,20 +294,20 @@ class _NewGroupState extends State<NewGroup> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.only(left: 16, top: 3),
               ),
+              baseStyle: TextStyle(fontSize: 16),
             ),
             onChanged: (selectedItem) {
               selectedCurrencyCode = currencyMap.keys.firstWhere(
                 (key) => currencyMap[key] == selectedItem,
                 orElse: () => '',
               );
-              // Here you can send selectedCurrencyCode to the database
               selectedValueController.text = selectedCurrencyCode;
             },
           ),
         ),
         if (currencyError != null)
           Padding(
-            padding: const EdgeInsets.only(left: 16, top: 8),
+            padding: const EdgeInsets.only(left: 8, top: 8),
             child: Text(currencyError!,
                 style: const TextStyle(color: Colors.red, fontSize: 12)),
           ),

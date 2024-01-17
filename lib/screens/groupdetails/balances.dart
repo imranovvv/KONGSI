@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -39,10 +40,13 @@ class MemberBalance {
 
 class _BalancesState extends State<Balances> {
   bool isLoading = true;
+  String? userName;
 
   @override
   void initState() {
     super.initState();
+    getUserData();
+
     loadCurrencySymbol();
   }
 
@@ -63,6 +67,22 @@ class _BalancesState extends State<Balances> {
     setState(() {
       currencySymbol = jsonResponse[currencyCode]['symbol_native'] ?? '\$';
     });
+  }
+
+  Future<void> getUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      var groupSnapshot = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .get();
+      var members = groupSnapshot['members'];
+      members.forEach((name, uid) {
+        if (uid == user.uid) {
+          setState(() => userName = name);
+        }
+      });
+    }
   }
 
   Stream<List<MemberBalance>> fetchMembersAndBalancesStream(
@@ -181,6 +201,10 @@ class _BalancesState extends State<Balances> {
               itemCount: memberBalances.length,
               itemBuilder: (context, index) {
                 final memberBalance = memberBalances[index];
+
+                String displayName = memberBalance.name == userName
+                    ? "${memberBalance.name} (me)"
+                    : memberBalance.name;
                 return Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16.0, vertical: 20.0),
@@ -191,7 +215,7 @@ class _BalancesState extends State<Balances> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Text(memberBalance.name),
+                            Text(displayName),
                           ],
                         ),
                       ),
