@@ -14,6 +14,7 @@ class AddExpense extends StatefulWidget {
   final String debtor;
   final double amount;
   final bool isReimbursement;
+  final bool isEdit;
 
   const AddExpense({
     Key? key,
@@ -23,6 +24,7 @@ class AddExpense extends StatefulWidget {
     this.debtor = '',
     this.amount = 0,
     this.isReimbursement = false,
+    this.isEdit = false,
   }) : super(key: key);
 
   @override
@@ -124,9 +126,9 @@ class _AddExpenseState extends State<AddExpense> {
             if (members.isNotEmpty) {
               setState(() {
                 groupMembers = members;
-                selectedPaidBy = (userName != null && members.contains(userName)
-                    ? userName
-                    : members.first)!;
+                selectedPaidBy =
+                    (widget.isReimbursement ? widget.paidBy : userName)!;
+
                 selectedMembers =
                     widget.debtor.isNotEmpty && members.contains(widget.debtor)
                         ? {widget.debtor}
@@ -410,9 +412,8 @@ class _AddExpenseState extends State<AddExpense> {
               itemBuilder: (context, index) {
                 String member = snapshot.data![index];
                 bool isSelected = selectedMembers.contains(member);
-                bool isCheckboxEnabled = !widget.isReimbursement ||
-                    member == widget.debtor; // Add this line
-
+                bool isCheckboxEnabled =
+                    !widget.isReimbursement || member == widget.debtor;
                 return InkWell(
                   onTap: isCheckboxEnabled
                       ? () {
@@ -432,7 +433,7 @@ class _AddExpenseState extends State<AddExpense> {
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
                     title: Text(
-                      '$member${member == userName ? ' (me)' : ''}', // Updated line
+                      '$member${member == userName ? ' (me)' : ''}',
                       style: GoogleFonts.poppins(),
                     ),
                     trailing: Row(
@@ -479,7 +480,6 @@ class _AddExpenseState extends State<AddExpense> {
                           inactiveColor: const Color(0xff10416d),
                           onChanged: isCheckboxEnabled
                               ? (bool? value) {
-                                  // Update this line
                                   setState(() {
                                     if (value == true) {
                                       selectedMembers.add(member);

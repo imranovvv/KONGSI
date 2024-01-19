@@ -107,7 +107,12 @@ class TransactionsState extends State<Transactions> {
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Expanded(
-                    child: Center(child: Text('Everyone\'s debt is settled')),
+                    child: Center(
+                      child: Text(
+                        "You don't have any expenses yet. Click the \"+\" button to add them.",
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   );
                 }
 
@@ -115,7 +120,7 @@ class TransactionsState extends State<Transactions> {
 
                 if (transactions.isEmpty) {
                   return const Expanded(
-                    child: Center(child: Text("Everyone's debt is settled")),
+                    child: Center(child: Text("Everyone's debt is settled.")),
                   );
                 }
 

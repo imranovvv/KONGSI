@@ -82,16 +82,41 @@ class _SelectMemberState extends State<SelectMember> {
         children: [
           AppBar(
             centerTitle: true,
-            title: const Text('Join Group',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            title: Text('Join $groupName',
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(
+            height: 20,
+          ),
+          const Text('Select a member to join the group'),
+          const SizedBox(
+            height: 20,
           ),
           Expanded(
             child: ListView.builder(
               itemCount: members.length,
               itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(members[index]),
-                  onTap: () => selectMember(members[index]),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Card(
+                    child: ListTile(
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(members[index]),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => selectMember(members[index]),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            child: const Text('Select'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 );
               },
             ),

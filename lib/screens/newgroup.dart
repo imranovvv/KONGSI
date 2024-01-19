@@ -78,13 +78,16 @@ class _NewGroupState extends State<NewGroup> {
         membersError != null) {
       return;
     }
+
     try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      String currentUserId = currentUser?.uid ?? '';
+
       Map<String, String> membersMap = {
         for (var member in members)
-          member: member == members.first
-              ? FirebaseAuth.instance.currentUser?.uid ?? ''
-              : ''
+          member: member == members.first ? currentUserId : ''
       };
+
       var newGroupData = {
         'groupname': groupNameController.text,
         'description': descriptionController.text,
@@ -95,26 +98,20 @@ class _NewGroupState extends State<NewGroup> {
       String groupId =
           (await firestore.collection('groups').add(newGroupData)).id;
 
-      await Future.forEach<String>(members, (memberName) async {
-        var userSnapshot = await firestore
+      if (currentUserId.isNotEmpty) {
+        var currentUserGroups =
+            (await firestore.collection('users').doc(currentUserId).get())
+                    .get('groups') ??
+                {};
+        currentUserGroups[groupNameController.text] = {
+          'id': groupId,
+          'createdAt': FieldValue.serverTimestamp(),
+        };
+        await firestore
             .collection('users')
-            .where('name', isEqualTo: memberName)
-            .get();
-        if (userSnapshot.docs.isNotEmpty) {
-          var userId = userSnapshot.docs.first.id;
-          var currentUserGroups = userSnapshot.docs.first.get('groups') ?? {};
-
-          currentUserGroups[groupNameController.text] = {
-            'id': groupId,
-            'createdAt': FieldValue.serverTimestamp(),
-          };
-
-          await firestore
-              .collection('users')
-              .doc(userId)
-              .update({'groups': currentUserGroups});
-        }
-      });
+            .doc(currentUserId)
+            .update({'groups': currentUserGroups});
+      }
 
       if (mounted) {
         Navigator.pushReplacement(

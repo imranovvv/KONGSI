@@ -94,7 +94,7 @@ class _JoinGroupState extends State<JoinGroup> {
                             blurRadius: 4)
                       ],
                     ),
-                    placeholder: 'Paste the invitation link',
+                    placeholder: 'Enter the group code',
                     controller: groupIdController,
                     keyboardType: TextInputType.text,
                     style: GoogleFonts.poppins(),

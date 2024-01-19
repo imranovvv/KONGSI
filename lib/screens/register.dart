@@ -19,32 +19,59 @@ class _RegisterState extends State<Register> {
   TextEditingController confirmPasswordController = TextEditingController();
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
+  bool isEmptyName = false;
+  bool isEmptyEmail = false;
+  bool isInvalidEmail = false;
+  bool isEmptyPassword = false;
+  bool isEmptyConfirmPassword = false;
+  bool isPasswordMismatch = false;
+  bool isWeakPassword = false;
 
   void signUp() async {
+    setState(() {
+      isEmptyName = nameController.text.isEmpty;
+      isEmptyEmail = emailController.text.isEmpty;
+      isInvalidEmail = false;
+      isEmptyPassword = passwordController.text.isEmpty;
+      isEmptyConfirmPassword = confirmPasswordController.text.isEmpty;
+      isPasswordMismatch =
+          passwordController.text != confirmPasswordController.text;
+      isWeakPassword = false;
+    });
+
+    if (isEmptyName ||
+        isEmptyEmail ||
+        isInvalidEmail ||
+        isEmptyPassword ||
+        isEmptyConfirmPassword ||
+        isPasswordMismatch) {
+      return;
+    }
+
     showDialog(
       context: context,
-      builder: (context) {
-        return const Center(
-          child: CupertinoActivityIndicator(),
-        );
-      },
+      builder: (context) => const Center(child: CupertinoActivityIndicator()),
     );
+
     try {
-      if (passwordController.text == confirmPasswordController.text) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text,
-        );
-        addUser(nameController.text, emailController.text);
-      } else {}
-      if (context.mounted) {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+      addUser(nameController.text, emailController.text);
+      if (mounted) {
         Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         Navigator.of(context).pop();
       }
-      if (e.code == 'invalid-email') {}
+      if (e.code == 'invalid-email') {
+        setState(() => isInvalidEmail = true);
+      }
+      if (e.code == 'weak-password') {
+        setState(() => isWeakPassword = true);
+      }
     }
   }
 
@@ -83,6 +110,10 @@ class _RegisterState extends State<Register> {
                       clearButtonMode: OverlayVisibilityMode.editing,
                       style: GoogleFonts.poppins(),
                     ),
+                    const SizedBox(height: 8.0),
+                    if (isEmptyName)
+                      const Text('Name cannot be empty',
+                          style: TextStyle(color: Colors.red, fontSize: 12)),
                     const SizedBox(height: 16.0),
                     CupertinoTextField(
                       placeholder: 'Email',
@@ -92,6 +123,13 @@ class _RegisterState extends State<Register> {
                       clearButtonMode: OverlayVisibilityMode.editing,
                       style: GoogleFonts.poppins(),
                     ),
+                    const SizedBox(height: 8.0),
+                    if (isEmptyEmail)
+                      const Text('Email cannot be empty',
+                          style: TextStyle(color: Colors.red, fontSize: 12)),
+                    if (isInvalidEmail)
+                      const Text('Invalid email format',
+                          style: TextStyle(color: Colors.red, fontSize: 12)),
                     const SizedBox(height: 16.0),
                     CupertinoTextField(
                       placeholder: 'Password',
@@ -118,6 +156,10 @@ class _RegisterState extends State<Register> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 8.0),
+                    if (isEmptyPassword)
+                      const Text('Password cannot be empty',
+                          style: TextStyle(color: Colors.red, fontSize: 12)),
                     const SizedBox(height: 16.0),
                     CupertinoTextField(
                       placeholder: 'Confirm Password',
@@ -145,6 +187,16 @@ class _RegisterState extends State<Register> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 8.0),
+                    if (isEmptyConfirmPassword)
+                      const Text('Confirm Password cannot be empty',
+                          style: TextStyle(color: Colors.red, fontSize: 12)),
+                    if (isPasswordMismatch)
+                      const Text('Passwords do not match',
+                          style: TextStyle(color: Colors.red, fontSize: 12)),
+                    if (isWeakPassword)
+                      const Text('Passwords must be more than 6 characters',
+                          style: TextStyle(color: Colors.red, fontSize: 12)),
                     const SizedBox(height: 16.0),
                     SizedBox(
                       width: MediaQuery.of(context).size.width * 1,

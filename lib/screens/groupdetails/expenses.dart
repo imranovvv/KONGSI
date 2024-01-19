@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:kongsi/screens/groupdetails/expensedetail.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 
 class Expenses extends StatefulWidget {
   final String groupId;
@@ -24,7 +23,7 @@ class Expense {
   final String paidBy;
   final DateTime date;
   final Map<String, double> debtors;
-  final DateTime createdAt; // Add this field
+  final DateTime createdAt;
 
   Expense({
     required this.expenseId,
@@ -33,7 +32,7 @@ class Expense {
     required this.paidBy,
     required this.date,
     required this.debtors,
-    required this.createdAt, // Initialize this field
+    required this.createdAt,
   });
 }
 
@@ -120,9 +119,11 @@ class _ExpensesState extends State<Expenses> {
     String currencyCode = await getCurrencyCode(widget.groupId);
     final jsonString = await rootBundle.loadString('assets/currency.json');
     final jsonResponse = json.decode(jsonString) as Map<String, dynamic>;
-    setState(() {
-      currencySymbol = jsonResponse[currencyCode]['symbol_native'];
-    });
+    if (mounted) {
+      setState(() {
+        currencySymbol = jsonResponse[currencyCode]['symbol_native'];
+      });
+    }
   }
 
   Future<void> getUserData() async {
@@ -134,8 +135,10 @@ class _ExpensesState extends State<Expenses> {
           .get();
       var members = groupSnapshot['members'];
       members.forEach((name, uid) {
-        if (uid == user.uid) {
-          setState(() => userName = name);
+        if (mounted) {
+          if (uid == user.uid) {
+            setState(() => userName = name);
+          }
         }
       });
     }
@@ -275,31 +278,39 @@ class _ExpensesState extends State<Expenses> {
 
   Widget buildExpenseTile(Expense expense, String documentId) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-              builder: (context) => ExpenseDetail(expense, currencySymbol)),
+      onLongPress: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (BuildContext context) {
+            return Container(
+              height: 100,
+              color: Colors.white,
+              child: Center(
+                child: ListTile(
+                  leading: const Icon(CupertinoIcons.delete, color: Colors.red),
+                  title: const Text('Delete Expense'),
+                  onTap: () {
+                    deleteExpense(widget.groupId, documentId);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            );
+          },
         );
       },
-      child: Column(
-        children: [
-          Slidable(
-            endActionPane: ActionPane(
-              motion: const ScrollMotion(),
-              children: [
-                SlidableAction(
-                  onPressed: ((context) {
-                    deleteExpense(widget.groupId, documentId);
-                  }),
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  icon: Icons.delete,
-                  label: 'Delete',
-                ),
-              ],
-            ),
-            child: ListTile(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            CupertinoPageRoute(
+                builder: (context) =>
+                    ExpenseDetail(expense, currencySymbol, userName!)),
+          );
+        },
+        child: Column(
+          children: [
+            ListTile(
               title: Text(expense.title,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(DateFormat('dd/MM/yyyy').format(expense.date),
@@ -307,12 +318,53 @@ class _ExpensesState extends State<Expenses> {
                       fontStyle: FontStyle.italic, color: Color(0xFF10416D))),
               trailing: buildExpenseAmountDisplay(expense),
             ),
-          ),
-          const Divider(color: Colors.grey, thickness: 1.0, height: 0.0),
-        ],
+            const Divider(color: Colors.grey, thickness: 1.0, height: 0.0),
+          ],
+        ),
       ),
     );
   }
+
+  // Widget buildExpenseTile(Expense expense, String documentId) {
+  //   Color tileColor = Theme.of(context).cardColor;
+
+  //   return CupertinoContextMenu.builder(
+  //     actions: [
+  //       CupertinoContextMenuAction(
+  //         onPressed: () {
+  //           Navigator.pop(context);
+  //           deleteExpense(widget.groupId, documentId);
+  //         },
+  //         isDestructiveAction: true,
+  //         trailingIcon: CupertinoIcons.delete,
+  //         child: const Text('Delete'),
+  //       ),
+  //     ],
+  //     builder: (BuildContext context, Animation<double> animation) {
+  //       final Animation<Decoration> boxDecorationAnimation =
+  //           _boxDecorationAnimation(animation);
+
+  //       return Container(
+  //         decoration: animation.value < CupertinoContextMenu.animationOpensAt
+  //             ? boxDecorationAnimation.value
+  //             : null,
+  //         child: Column(
+  //           children: [
+  //             ListTile(
+  //               title: Text(expense.title,
+  //                   style: const TextStyle(fontWeight: FontWeight.bold)),
+  //               subtitle: Text(DateFormat('dd/MM/yyyy').format(expense.date),
+  //                   style: const TextStyle(
+  //                       fontStyle: FontStyle.italic, color: Color(0xFF10416D))),
+  //               trailing: buildExpenseAmountDisplay(expense),
+  //             ),
+  //             const Divider(color: Colors.grey, thickness: 1.0, height: 0.0),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   Future<void> deleteExpense(String groupId, String documentId) async {
     await FirebaseFirestore.instance
@@ -417,7 +469,7 @@ Stream<List<Expense>> getExpensesStream(String groupId) {
               paidBy: data['paidBy'],
               date: DateTime.parse(data['date']),
               debtors: Map<String, double>.from(data['debtors'] ?? {}),
-              createdAt: data['createdAt'].toDate(), // Parse createdAt field
+              createdAt: data['createdAt'].toDate(),
             );
           }).toList());
 }

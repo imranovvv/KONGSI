@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'package:kongsi/screens/groupdetailpage.dart';
 import 'package:kongsi/screens/joingroup.dart';
 import 'package:kongsi/screens/newgroup.dart';
@@ -166,36 +164,63 @@ class _HomeState extends State<Home> {
     );
   }
 
+  final DecorationTween _tween = DecorationTween(
+    begin: BoxDecoration(
+      borderRadius: BorderRadius.circular(6),
+    ),
+    end: BoxDecoration(
+      borderRadius: BorderRadius.circular(6),
+      boxShadow: CupertinoContextMenu.kEndBoxShadow,
+    ),
+  );
+
+  Animation<Decoration> _boxDecorationAnimation(Animation<double> animation) {
+    return _tween.animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: Interval(
+          0.0,
+          CupertinoContextMenu.animationOpensAt,
+        ),
+      ),
+    );
+  }
+
   Widget _buildGroupTile(String groupName, String groupId, int index) {
     Color tileColor = index.isOdd ? const Color(0xffECECEC) : Colors.white;
 
-    return Card(
-      child: Slidable(
-        endActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: ((context) {
-                _deleteGroup(groupName);
-              }),
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              icon: Icons.delete,
-              label: 'Delete',
-            ),
-          ],
-        ),
+    return GestureDetector(
+      onLongPress: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (BuildContext context) {
+            return Container(
+              height: 100,
+              color: Colors.white,
+              child: Center(
+                child: ListTile(
+                  leading: const Icon(CupertinoIcons.delete, color: Colors.red),
+                  title: const Text('Delete'),
+                  onTap: () {
+                    _deleteGroup(groupName);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      },
+      child: Card(
         child: ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           tileColor: tileColor,
           title: Text(groupName),
           trailing: const Icon(CupertinoIcons.forward),
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
+              CupertinoPageRoute(
                 builder: (context) => GroupDetailPage(
                   groupId: groupId,
                   groupName: groupName,

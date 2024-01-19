@@ -16,47 +16,43 @@ class _LoginState extends State<Login> {
   TextEditingController passwordController = TextEditingController();
   bool isPasswordVisible = false;
   bool isInvalidEmail = false;
+  bool isEmptyEmail = false;
+  bool isEmptyPassword = false;
+  bool isLoginFailed = false;
+
   void signIn() async {
+    setState(() {
+      isEmptyEmail = emailController.text.isEmpty;
+      isEmptyPassword = passwordController.text.isEmpty;
+      isInvalidEmail = false;
+      isLoginFailed = false;
+    });
+
+    if (isEmptyEmail || isEmptyPassword) return;
+
     showDialog(
       context: context,
-      builder: (context) {
-        return const Center(
-          child: CupertinoActivityIndicator(),
-        );
-      },
+      builder: (context) => const Center(child: CupertinoActivityIndicator()),
     );
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
-      if (context.mounted) {
+      if (mounted) {
         Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         Navigator.of(context).pop();
       }
-      if (e.code == 'invalid-email') {}
-      isInvalidEmail = true;
+      if (e.code == 'invalid-email') {
+        setState(() => isInvalidEmail = true);
+      } else if (e.code == 'INVALID_LOGIN_CREDENTIALS') {
+        setState(() => isLoginFailed = true);
+      }
     }
-  }
-
-  void showErrorMessage(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.amber,
-          title: Center(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -86,18 +82,13 @@ class _LoginState extends State<Login> {
                         clearButtonMode: OverlayVisibilityMode.editing,
                         style: GoogleFonts.poppins(),
                       ),
-                      // if (!isInvalidEmail)
-                      //   Align(
-                      //     alignment: Alignment.centerLeft,
-                      //     child: Padding(
-                      //       padding: EdgeInsets.only(left: 10.0),
-                      //       child: Text(
-                      //         'Invalid email address',
-                      //         style: TextStyle(color: Colors.red),
-                      //         textAlign: TextAlign.left,
-                      //       ),
-                      //     ),
-                      //   ),
+                      const SizedBox(height: 8.0),
+                      if (isEmptyEmail)
+                        const Text('Enter email',
+                            style: TextStyle(color: Colors.red, fontSize: 12)),
+                      if (isInvalidEmail)
+                        const Text('Invalid email address',
+                            style: TextStyle(color: Colors.red, fontSize: 12)),
                       const SizedBox(height: 16.0),
                       CupertinoTextField(
                         placeholder: 'Password',
@@ -124,6 +115,13 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 8.0),
+                      if (isEmptyPassword)
+                        const Text('Enter password',
+                            style: TextStyle(color: Colors.red, fontSize: 12)),
+                      if (isLoginFailed)
+                        const Text('Login failed',
+                            style: TextStyle(color: Colors.red, fontSize: 12)),
                       const SizedBox(height: 16.0),
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 1,
@@ -133,9 +131,7 @@ class _LoginState extends State<Login> {
                             backgroundColor: const Color(0xff10416d),
                             elevation: 0,
                           ),
-                          onPressed: () {
-                            signIn();
-                          },
+                          onPressed: signIn,
                           child: const Text(
                             "Login",
                             style: TextStyle(fontSize: 16),
