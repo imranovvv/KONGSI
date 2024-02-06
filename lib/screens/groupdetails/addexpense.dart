@@ -9,9 +9,12 @@ import 'dart:async';
 
 class AddExpense extends StatefulWidget {
   final String groupId;
+  final String expenseId;
   final String title;
+  final DateTime? date;
   final String paidBy;
   final String debtor;
+  final List<String> debtors;
   final double amount;
   final bool isReimbursement;
   final bool isEdit;
@@ -19,9 +22,12 @@ class AddExpense extends StatefulWidget {
   const AddExpense({
     Key? key,
     required this.groupId,
+    this.expenseId = '',
     this.title = '',
+    this.date,
     this.paidBy = '',
     this.debtor = '',
+    required this.debtors,
     this.amount = 0,
     this.isReimbursement = false,
     this.isEdit = false,
@@ -40,6 +46,7 @@ class _AddExpenseState extends State<AddExpense> {
   String? titleError;
   String? amountError;
   String? numericError;
+  String? membersError;
 
   String? userName;
   late List<String> groupMembers;
@@ -55,8 +62,10 @@ class _AddExpenseState extends State<AddExpense> {
   @override
   void initState() {
     super.initState();
-    selectedDate = DateTime.now();
+    selectedDate =
+        widget.isEdit && widget.date != null ? widget.date! : DateTime.now();
     dateController.text = formatDate(selectedDate);
+
     fetchUserDataAndGroupMembers();
 
     if (widget.title.isNotEmpty) {
@@ -126,13 +135,17 @@ class _AddExpenseState extends State<AddExpense> {
             if (members.isNotEmpty) {
               setState(() {
                 groupMembers = members;
-                selectedPaidBy =
-                    (widget.isReimbursement ? widget.paidBy : userName)!;
+                selectedPaidBy = ((widget.isReimbursement || widget.isEdit)
+                    ? widget.paidBy
+                    : userName)!;
 
-                selectedMembers =
-                    widget.debtor.isNotEmpty && members.contains(widget.debtor)
-                        ? {widget.debtor}
-                        : Set.from(members);
+                if (widget.isReimbursement) {
+                  selectedMembers = {widget.debtor};
+                } else if (widget.isEdit) {
+                  selectedMembers = Set.from(widget.debtors);
+                } else {
+                  selectedMembers = Set.from(members);
+                }
 
                 for (double i = 0; i < members.length; i++) {
                   customAmountControllers[i] = TextEditingController(text: '0');
@@ -214,8 +227,13 @@ class _AddExpenseState extends State<AddExpense> {
           children: [
             AppBar(
               centerTitle: true,
-              title: const Text('New Expense',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              title: Text(
+                widget.isEdit
+                    ? 'Edit Expense'
+                    : 'New Expense', // This line changes based on isEdit
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(30),
@@ -251,6 +269,13 @@ class _AddExpenseState extends State<AddExpense> {
                   buildPaidByField(),
                   const SizedBox(height: 20.0),
                   buildMembersList(),
+                  if (membersError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(membersError!,
+                          style:
+                              const TextStyle(color: Colors.red, fontSize: 12)),
+                    ),
                 ],
               ),
             ),
@@ -341,40 +366,42 @@ class _AddExpenseState extends State<AddExpense> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 0.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('For whom',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.black,
+            padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 0.0),
+            child: widget.isReimbursement
+                ? null
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('For whom',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.black,
+                          )),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        child: Text(
+                          isCustomSplit ? 'Custom Split' : 'Equal Split',
+                          style: GoogleFonts.poppins(
+                            color: Colors.blue[800],
+                            fontSize: 12,
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isCustomSplit = !isCustomSplit;
+                            if (!isCustomSplit) {
+                              customAmounts.clear();
+                              for (var controller
+                                  in customAmountControllers.values) {
+                                controller.text = '0';
+                              }
+                              amountController.clear();
+                            }
+                          });
+                        },
+                      ),
+                    ],
                   )),
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                child: Text(
-                  isCustomSplit ? 'Custom Split' : 'Equal Split',
-                  style: GoogleFonts.poppins(
-                    color: Colors.blue[800],
-                    fontSize: 12,
-                  ),
-                ),
-                onPressed: () {
-                  setState(() {
-                    isCustomSplit = !isCustomSplit;
-                    if (!isCustomSplit) {
-                      customAmounts.clear();
-                      for (var controller in customAmountControllers.values) {
-                        controller.text = '0';
-                      }
-                      amountController.clear();
-                    }
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 10.0),
           child: widget.isReimbursement
@@ -521,12 +548,15 @@ class _AddExpenseState extends State<AddExpense> {
     setState(() {
       titleError = titleController.text.isEmpty ? 'Title is required' : null;
       amountError = amountController.text.isEmpty ? 'Amount is required' : null;
+      membersError = selectedMembers.isEmpty
+          ? 'At least one member must be selected'
+          : null;
       if (numericError != null) {
         amountError = numericError;
       }
     });
 
-    if (titleError != null || amountError != null) {
+    if (titleError != null || amountError != null || membersError != null) {
       return;
     }
     String title = titleController.text;
@@ -535,7 +565,11 @@ class _AddExpenseState extends State<AddExpense> {
     Map<String, double> debtors = {};
 
     if (isCustomSplit) {
-      debtors = customAmounts;
+      customAmounts.forEach((key, value) {
+        if (value > 0) {
+          debtors[key] = value;
+        }
+      });
     } else {
       for (var member in selectedMembers) {
         debtors[member] = splitAmounts;
@@ -548,21 +582,33 @@ class _AddExpenseState extends State<AddExpense> {
       'date': date,
       'paidBy': selectedPaidBy,
       'debtors': debtors,
-      'createdAt': FieldValue.serverTimestamp(),
     };
 
     try {
-      await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('expenses')
-          .add(expenseData);
+      if (widget.isEdit) {
+        await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId)
+            .collection('expenses')
+            .doc(widget.expenseId)
+            .update(expenseData);
+
+        print('Expense updated successfully');
+      } else {
+        expenseData['createdAt'] = FieldValue.serverTimestamp();
+
+        await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId)
+            .collection('expenses')
+            .add(expenseData);
+
+        print('Expense added successfully');
+      }
 
       if (mounted) Navigator.of(context).pop();
-
-      print('Expense added successfully');
     } catch (e) {
-      print('Error adding expense: $e');
+      print('Error processing expense: $e');
     }
   }
 

@@ -162,7 +162,8 @@ class _BalancesState extends State<Balances> {
           inactiveTrackColor: Colors.grey,
           thumbColor: Colors.black,
           rangeThumbShape:
-              const RoundRangeSliderThumbShape(enabledThumbRadius: 4.0),
+              const _CustomRangeSliderThumbShape(), // Updated to use custom shape
+
           trackShape: const RectangularSliderTrackShape(),
           overlayShape: SliderComponentShape.noThumb),
       child: AbsorbPointer(
@@ -250,5 +251,38 @@ class _BalancesState extends State<Balances> {
         ),
       ),
     );
+  }
+}
+
+class _CustomRangeSliderThumbShape extends RangeSliderThumbShape {
+  const _CustomRangeSliderThumbShape();
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
+    return const Size(10, 30); // Width and height of the thumb
+  }
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    bool isDiscrete = false,
+    bool isEnabled = false,
+    bool isOnTop = false,
+    TextDirection textDirection = TextDirection.ltr,
+    required SliderThemeData sliderTheme,
+    Thumb thumb = Thumb.start,
+    bool isPressed = false,
+  }) {
+    final Paint paint = Paint()
+      ..color = sliderTheme.thumbColor! // Color of the thumb
+      ..style = PaintingStyle.fill;
+    final Rect rect = Rect.fromCenter(
+        center: center,
+        width: 1.5,
+        height: 10); // Adjust width and height accordingly
+    context.canvas.drawRect(rect, paint);
   }
 }

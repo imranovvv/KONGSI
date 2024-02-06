@@ -26,6 +26,7 @@ class _NewGroupState extends State<NewGroup> {
   String? descriptionError;
   String? currencyError;
   String? membersError;
+  String? addMemberError;
 
   final List<String> members = [];
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -154,38 +155,57 @@ class _NewGroupState extends State<NewGroup> {
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 20.0),
       title: Text(members[index]),
-      trailing: IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () => setState(() => members.removeAt(index)),
-      ),
+      trailing: index > 0
+          ? IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: () => setState(() => members.removeAt(index)),
+            )
+          : null,
     );
   }
 
   Widget addMemberTile() {
-    return ListTile(
-      contentPadding: const EdgeInsets.only(left: 20.0),
-      title: TextField(
-        controller: textController,
-        autofocus: false,
-        decoration: const InputDecoration(hintText: 'Enter name'),
-      ),
-      trailing: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: const EdgeInsets.only(left: 20.0),
+          title: TextField(
+            controller: textController,
+            autofocus: false,
+            decoration: InputDecoration(
+              hintText: 'Enter name',
+              errorText: addMemberError,
+            ),
+            onChanged: (value) => setState(() {
+              addMemberError = null;
+            }),
+          ),
+          trailing: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
+            onPressed: () {
+              if (textController.text.isNotEmpty) {
+                if (members.contains(textController.text)) {
+                  setState(() {
+                    addMemberError = "Already on the list";
+                  });
+                } else {
+                  setState(() {
+                    members.add(textController.text);
+                    textController.clear();
+                    addMemberError = null;
+                  });
+                }
+              }
+            },
+            child: const Text(
+              'Add',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
         ),
-        onPressed: () {
-          if (textController.text.isNotEmpty) {
-            setState(() {
-              members.add(textController.text);
-              textController.clear();
-            });
-          }
-        },
-        child: const Text(
-          'Add',
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
+      ],
     );
   }
 

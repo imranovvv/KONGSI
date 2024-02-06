@@ -5,6 +5,7 @@ import 'package:kongsi/screens/groupdetails/addexpense.dart';
 import 'package:kongsi/screens/groupdetails/balances.dart';
 import 'package:kongsi/screens/groupdetails/expenses.dart';
 import 'package:kongsi/screens/groupdetails/transactions.dart';
+import 'package:share_plus/share_plus.dart';
 
 class GroupDetailPage extends StatefulWidget {
   final String groupName;
@@ -33,6 +34,30 @@ class _GroupDetailPageState extends State<GroupDetailPage>
     _tabController.dispose();
   }
 
+  void _onShare(BuildContext context) async {
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+
+    await Share.share(
+      'Enter the following code to join the group:  ${widget.groupId}',
+      subject: 'Kongsi Group Invitation',
+      sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
+    );
+  }
+
+  void onSelected(BuildContext context, int item) {
+    switch (item) {
+      case 0:
+        _onShare(context);
+        break;
+      case 1:
+        // Action for Option 2
+        break;
+      case 2:
+        // Action for Option 3
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +71,10 @@ class _GroupDetailPageState extends State<GroupDetailPage>
             Navigator.push(
               context,
               CupertinoPageRoute(
-                builder: (context) => AddExpense(groupId: widget.groupId),
+                builder: (context) => AddExpense(
+                  groupId: widget.groupId,
+                  debtors: const [],
+                ),
               ),
             );
           },
@@ -68,6 +96,23 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                 fontWeight: FontWeight.bold,
               ),
             ),
+            actions: [
+              PopupMenuButton(
+                onSelected: (item) => onSelected(context, item),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 0,
+                    child: Text(
+                      'Share code',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20.0),
           Container(

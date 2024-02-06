@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kongsi/components/appbar.dart';
-import 'package:kongsi/screens/groupdetails/addexpense.dart';
 import 'package:kongsi/screens/groupdetails/expenses.dart';
 
 class ExpenseDetail extends StatefulWidget {
@@ -17,23 +16,6 @@ class ExpenseDetail extends StatefulWidget {
 }
 
 class _ExpenseDetailState extends State<ExpenseDetail> {
-//   void _navigateToEditExpense(BuildContext context) {
-//   Navigator.of(context).push(
-//     MaterialPageRoute(
-//       builder: (context) => AddExpense(
-//         groupId: widget.expense.groupId, // Assuming your Expense class has a groupId
-//         title: widget.expense.title,
-//         paidBy: widget.expense.paidBy,
-//         amount: widget.expense.amount,
-//         // If your Expense class contains more fields, make sure to pass them as well
-//         debtor: widget.expense.debtor, // If applicable
-//         isReimbursement: false, // Set this according to your logic
-//         isEdit: true,
-//       ),
-//     ),
-//   );
-// }
-
   @override
   Widget build(BuildContext context) {
     String paidByDisplay = widget.expense.paidBy == widget.userName
@@ -59,12 +41,6 @@ class _ExpenseDetailState extends State<ExpenseDetail> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              // actions: [
-              //   IconButton(
-              //     icon: Icon(Icons.edit),
-              //     onPressed: () => _navigateToEditExpense(context),
-              //   ),
-              // ],
             ),
             Center(
               child: Text(

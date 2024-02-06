@@ -321,6 +321,7 @@ class TransactionsState extends State<Transactions> {
               debtor: transaction.creditor,
               amount: transaction.amount,
               isReimbursement: true,
+              debtors: [],
             ),
           ),
         );

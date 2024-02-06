@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:kongsi/screens/groupdetails/expensedetail.dart';
+import 'addexpense.dart';
 
 class Expenses extends StatefulWidget {
   final String groupId;
@@ -255,7 +256,6 @@ class _ExpensesState extends State<Expenses> {
           }
           var expenses = filterExpenses(snapshot.data!);
           expenses = sortExpenses(expenses, currentSortOption, isDescending);
-
           return ListView.builder(
             itemCount: expenses.length,
             itemBuilder: (context, index) =>
@@ -283,19 +283,49 @@ class _ExpensesState extends State<Expenses> {
           context: context,
           builder: (BuildContext context) {
             return Container(
-              height: 100,
-              color: Colors.white,
-              child: Center(
-                child: ListTile(
-                  leading: const Icon(CupertinoIcons.delete, color: Colors.red),
-                  title: const Text('Delete Expense'),
-                  onTap: () {
-                    deleteExpense(widget.groupId, documentId);
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-            );
+                height: 120,
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    Center(
+                      child: ListTile(
+                        leading: const Icon(Icons.create, color: Colors.blue),
+                        title: const Text('Edit Expense'),
+                        onTap: () {
+                          Navigator.pop(context);
+
+                          Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                              builder: (context) => AddExpense(
+                                groupId: widget.groupId,
+                                expenseId: expense.expenseId,
+                                title: expense.title,
+                                date: expense.date,
+                                paidBy: expense.paidBy,
+                                debtors: expense.debtors.keys.toList(),
+                                amount: expense.amount,
+                                isReimbursement: false,
+                                isEdit: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Center(
+                      child: ListTile(
+                        leading: const Icon(CupertinoIcons.delete,
+                            color: Colors.red),
+                        title: const Text('Delete Expense'),
+                        onTap: () {
+                          deleteExpense(widget.groupId, documentId);
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                  ],
+                ));
           },
         );
       },
@@ -324,47 +354,6 @@ class _ExpensesState extends State<Expenses> {
       ),
     );
   }
-
-  // Widget buildExpenseTile(Expense expense, String documentId) {
-  //   Color tileColor = Theme.of(context).cardColor;
-
-  //   return CupertinoContextMenu.builder(
-  //     actions: [
-  //       CupertinoContextMenuAction(
-  //         onPressed: () {
-  //           Navigator.pop(context);
-  //           deleteExpense(widget.groupId, documentId);
-  //         },
-  //         isDestructiveAction: true,
-  //         trailingIcon: CupertinoIcons.delete,
-  //         child: const Text('Delete'),
-  //       ),
-  //     ],
-  //     builder: (BuildContext context, Animation<double> animation) {
-  //       final Animation<Decoration> boxDecorationAnimation =
-  //           _boxDecorationAnimation(animation);
-
-  //       return Container(
-  //         decoration: animation.value < CupertinoContextMenu.animationOpensAt
-  //             ? boxDecorationAnimation.value
-  //             : null,
-  //         child: Column(
-  //           children: [
-  //             ListTile(
-  //               title: Text(expense.title,
-  //                   style: const TextStyle(fontWeight: FontWeight.bold)),
-  //               subtitle: Text(DateFormat('dd/MM/yyyy').format(expense.date),
-  //                   style: const TextStyle(
-  //                       fontStyle: FontStyle.italic, color: Color(0xFF10416D))),
-  //               trailing: buildExpenseAmountDisplay(expense),
-  //             ),
-  //             const Divider(color: Colors.grey, thickness: 1.0, height: 0.0),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
 
   Future<void> deleteExpense(String groupId, String documentId) async {
     await FirebaseFirestore.instance
