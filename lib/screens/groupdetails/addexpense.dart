@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:kongsi/components/appbar.dart';
@@ -14,7 +17,7 @@ class AddExpense extends StatefulWidget {
   final DateTime? date;
   final String paidBy;
   final String debtor;
-  final List<String> debtors;
+  final Map<String, double> debtors;
   final double amount;
   final bool isReimbursement;
   final bool isEdit;
@@ -55,13 +58,18 @@ class _AddExpenseState extends State<AddExpense> {
       StreamController<List<String>>();
   Set<String> selectedMembers = {};
   bool isCustomSplit = false;
-  double splitAmounts = 0.0;
+  // double splitAmounts = 0.0;
+  Map<String, double> splitAmounts = {};
+
   Map<String, double> customAmounts = {};
   Map<double, TextEditingController> customAmountControllers = {};
+  String currencySymbol = '';
 
   @override
   void initState() {
     super.initState();
+    loadCurrencySymbol();
+
     selectedDate =
         widget.isEdit && widget.date != null ? widget.date! : DateTime.now();
     dateController.text = formatDate(selectedDate);
@@ -91,10 +99,28 @@ class _AddExpenseState extends State<AddExpense> {
   }
 
   void _updateSplitAmount() {
-    if (selectedMembers.isNotEmpty) {
-      double amount = double.tryParse(amountController.text) ?? 0.0;
+    double totalAmount = double.tryParse(amountController.text) ?? 0.0;
+    int numMembers = selectedMembers.length;
+
+    if (numMembers > 0) {
+      int totalAmountInCents = (totalAmount * 100).round();
+      int baseAmountInCents = totalAmountInCents ~/ numMembers;
+      int remainderCents = totalAmountInCents % numMembers;
+
       setState(() {
-        splitAmounts = amount > 0 ? amount / selectedMembers.length : 0.0;
+        splitAmounts.clear();
+
+        for (String member in selectedMembers) {
+          double memberAmount = baseAmountInCents / 100.0;
+          if (remainderCents > 0) {
+            memberAmount += 0.01;
+            remainderCents -= 1;
+          }
+
+          memberAmount = double.parse(memberAmount.toStringAsFixed(2));
+
+          splitAmounts[member] = memberAmount;
+        }
       });
     }
   }
@@ -142,7 +168,7 @@ class _AddExpenseState extends State<AddExpense> {
                 if (widget.isReimbursement) {
                   selectedMembers = {widget.debtor};
                 } else if (widget.isEdit) {
-                  selectedMembers = Set.from(widget.debtors);
+                  selectedMembers = Set.from(widget.debtors.keys);
                 } else {
                   selectedMembers = Set.from(members);
                 }
@@ -154,6 +180,9 @@ class _AddExpenseState extends State<AddExpense> {
               _updateSplitAmount();
 
               membersStreamController.add(members);
+              if (widget.isEdit) {
+                await _fetchExpenseData();
+              }
             }
           } else {
             print('No members found in group.');
@@ -164,6 +193,43 @@ class _AddExpenseState extends State<AddExpense> {
       }
     } catch (error) {
       print('Error fetching data: $error');
+    }
+  }
+
+  Future<void> _fetchExpenseData() async {
+    try {
+      var expenseSnapshot = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .collection('expenses')
+          .doc(widget.expenseId)
+          .get();
+
+      if (expenseSnapshot.exists) {
+        var expenseData = expenseSnapshot.data();
+        if (expenseData != null && expenseData['isCustomSplit'] == true) {
+          setState(() {
+            isCustomSplit = true;
+            widget.debtors.forEach((member, amount) {
+              if (groupMembers.contains(member)) {
+                customAmounts[member] = amount;
+                int memberIndex = groupMembers.indexOf(member);
+                if (customAmountControllers
+                    .containsKey(double.parse(memberIndex.toString()))) {
+                  customAmountControllers[double.parse(memberIndex.toString())]
+                      ?.text = amount.toStringAsFixed(2);
+                } else {
+                  customAmountControllers[
+                          double.parse(memberIndex.toString())] =
+                      TextEditingController(text: amount.toStringAsFixed(2));
+                }
+              }
+            });
+          });
+        }
+      }
+    } catch (error) {
+      print('Error fetching expense data: $error');
     }
   }
 
@@ -228,9 +294,7 @@ class _AddExpenseState extends State<AddExpense> {
             AppBar(
               centerTitle: true,
               title: Text(
-                widget.isEdit
-                    ? 'Edit Expense'
-                    : 'New Expense', // This line changes based on isEdit
+                widget.isEdit ? 'Edit Expense' : 'New Expense',
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
@@ -406,7 +470,7 @@ class _AddExpenseState extends State<AddExpense> {
           padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 10.0),
           child: widget.isReimbursement
               ? Text(
-                  '${widget.paidBy} is paying \$${widget.amount.toStringAsFixed(2)} to settle his debt with ${widget.debtor}',
+                  '${widget.paidBy} is paying $currencySymbol${widget.amount.toStringAsFixed(2)} to settle his debt with ${widget.debtor}',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.black,
@@ -497,8 +561,8 @@ class _AddExpenseState extends State<AddExpense> {
                               )
                             : Text(
                                 isSelected
-                                    ? '\$${splitAmounts.toStringAsFixed(2)}'
-                                    : '\$0.00',
+                                    ? '$currencySymbol${splitAmounts[member]?.toStringAsFixed(2) ?? '0.00'}'
+                                    : '${currencySymbol}0.00',
                               ),
                         CupertinoCheckbox(
                           value: isSelected,
@@ -572,7 +636,7 @@ class _AddExpenseState extends State<AddExpense> {
       });
     } else {
       for (var member in selectedMembers) {
-        debtors[member] = splitAmounts;
+        debtors[member] = splitAmounts[member] ?? 0.0;
       }
     }
 
@@ -582,6 +646,7 @@ class _AddExpenseState extends State<AddExpense> {
       'date': date,
       'paidBy': selectedPaidBy,
       'debtors': debtors,
+      'isCustomSplit': isCustomSplit,
     };
 
     try {
@@ -628,5 +693,24 @@ class _AddExpenseState extends State<AddExpense> {
 
   String formatDateForFirestore(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
+  }
+
+  Future<String> getCurrencyCode(String groupId) async {
+    var groupSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .get();
+    return groupSnapshot.data()?['currency'];
+  }
+
+  Future<void> loadCurrencySymbol() async {
+    String currencyCode = await getCurrencyCode(widget.groupId);
+    final jsonString = await rootBundle.loadString('assets/currency.json');
+    final jsonResponse = json.decode(jsonString) as Map<String, dynamic>;
+    if (mounted) {
+      setState(() {
+        currencySymbol = jsonResponse[currencyCode]['symbol_native'];
+      });
+    }
   }
 }

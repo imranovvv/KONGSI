@@ -73,7 +73,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
               CupertinoPageRoute(
                 builder: (context) => AddExpense(
                   groupId: widget.groupId,
-                  debtors: const [],
+                  debtors: const {},
                 ),
               ),
             );

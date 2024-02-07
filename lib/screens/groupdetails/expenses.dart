@@ -303,7 +303,7 @@ class _ExpensesState extends State<Expenses> {
                                 title: expense.title,
                                 date: expense.date,
                                 paidBy: expense.paidBy,
-                                debtors: expense.debtors.keys.toList(),
+                                debtors: expense.debtors,
                                 amount: expense.amount,
                                 isReimbursement: false,
                                 isEdit: true,
