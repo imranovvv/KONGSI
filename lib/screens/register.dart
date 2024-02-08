@@ -26,6 +26,7 @@ class _RegisterState extends State<Register> {
   bool isEmptyConfirmPassword = false;
   bool isPasswordMismatch = false;
   bool isWeakPassword = false;
+  bool isExistingEmail = false;
 
   void signUp() async {
     setState(() {
@@ -37,6 +38,7 @@ class _RegisterState extends State<Register> {
       isPasswordMismatch =
           passwordController.text != confirmPasswordController.text;
       isWeakPassword = false;
+      isExistingEmail = false;
     });
 
     if (isEmptyName ||
@@ -44,7 +46,8 @@ class _RegisterState extends State<Register> {
         isInvalidEmail ||
         isEmptyPassword ||
         isEmptyConfirmPassword ||
-        isPasswordMismatch) {
+        isPasswordMismatch ||
+        isExistingEmail) {
       return;
     }
 
@@ -71,6 +74,9 @@ class _RegisterState extends State<Register> {
       }
       if (e.code == 'weak-password') {
         setState(() => isWeakPassword = true);
+      }
+      if (e.code == 'email-already-in-use') {
+        setState(() => isExistingEmail = true);
       }
     }
   }
@@ -129,6 +135,9 @@ class _RegisterState extends State<Register> {
                           style: TextStyle(color: Colors.red, fontSize: 12)),
                     if (isInvalidEmail)
                       const Text('Invalid email format',
+                          style: TextStyle(color: Colors.red, fontSize: 12)),
+                    if (isExistingEmail)
+                      const Text('Email already in use',
                           style: TextStyle(color: Colors.red, fontSize: 12)),
                     const SizedBox(height: 16.0),
                     CupertinoTextField(
