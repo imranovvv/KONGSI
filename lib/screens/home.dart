@@ -81,10 +81,19 @@ class _HomeState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(
-          '${userName ?? ""}\'s Groups',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        title: userName == null
+            ? const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CupertinoActivityIndicator(),
+                  SizedBox(width: 10),
+                ],
+              )
+            : Text(
+                '$userName\'s Groups',
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
       ),
       body: Column(
         children: [
@@ -294,9 +303,16 @@ class _HomeState extends State<Home> {
 
       Map<String, dynamic> groupsMap =
           Map<String, dynamic>.from(data['groups'] ?? {});
+
       List<MapEntry<String, dynamic>> sortedGroups = groupsMap.entries.toList()
-        ..sort((b, a) => (a.value['createdAt'] as Timestamp)
-            .compareTo(b.value['createdAt'] as Timestamp));
+        ..sort((b, a) {
+          final Timestamp? timestampA = a.value['createdAt'] as Timestamp?;
+          final Timestamp? timestampB = b.value['createdAt'] as Timestamp?;
+          if (timestampA == null || timestampB == null) {
+            return 0;
+          }
+          return timestampA.compareTo(timestampB);
+        });
 
       Map<String, dynamic> orderedGroups = {
         for (var entry in sortedGroups) entry.key: entry.value

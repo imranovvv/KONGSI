@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -187,7 +188,7 @@ class _BalancesState extends State<Balances> {
           stream: fetchMembersAndBalancesStream(widget.groupId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
+              return const CupertinoActivityIndicator();
             }
             if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');

@@ -42,6 +42,10 @@ dependencies:
   firebase_auth: ^4.12.0
   cloud_firestore: ^4.12.0
   dropdown_search: ^5.0.6
+  intl: ^0.19.0
+  rxdart: ^0.27.7
+  share_plus: ^7.2.1
+  flutter_slidable: ^3.0.1
 
 flutter_native_splash:
   color: "#E8EEF3"
@@ -77,6 +81,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - images/LogoKongsi.png
+    - assets/currency.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

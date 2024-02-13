@@ -241,7 +241,7 @@ class _ExpensesState extends State<Expenses> {
         stream: expensesStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CupertinoActivityIndicator());
           }
           if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');

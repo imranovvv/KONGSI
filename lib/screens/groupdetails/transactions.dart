@@ -98,7 +98,7 @@ class TransactionsState extends State<Transactions> {
               stream: fetchTransactionsStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CupertinoActivityIndicator());
                 }
 
                 if (snapshot.hasError) {

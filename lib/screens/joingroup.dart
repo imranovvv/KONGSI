@@ -133,7 +133,7 @@ class _JoinGroupState extends State<JoinGroup> {
                 } else if (snapshot.hasError) {
                   return Text('Error: ${snapshot.error}');
                 }
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: CupertinoActivityIndicator());
               },
             ),
         ],

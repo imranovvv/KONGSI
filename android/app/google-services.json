@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "612981118412",
+    "project_id": "kongsi-fyp-app",
+    "storage_bucket": "kongsi-fyp-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:612981118412:android:20b80b6c548dcbac423969",
+        "android_client_info": {
+          "package_name": "com.example.kongsi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApCYOIxQ805HTD2Wbm7KTK46vMmfHAZgQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
